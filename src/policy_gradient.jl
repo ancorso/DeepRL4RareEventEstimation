@@ -1,35 +1,52 @@
 include("evaluation.jl")
 
 function pgis_loss(π, 𝒫, 𝒟; info = Dict())
-	act = actor(π)
+	πs = trainable_policies(π)
 	
-	if act isa MISPolicy
-		ids = 𝒟[:id][:]
-		logpdfs = vcat([logpdf(d, 𝒟[:s], 𝒟[:a]) for d in trainable_policies(act)]...)
-		new_probs = sum(logpdfs .* Flux.onehotbatch(𝒟[:id][:], collect(1:length(trainable_policies(act)))), dims=1)
-	else
-		new_probs = logpdf(act, 𝒟[:s], 𝒟[:a])
+	# Compute the baseline
+	b = ignore_derivatives() do
+		if 𝒫[:use_baseline]
+			if length(πs) > 1
+				bs = vcat([logpdf(d, 𝒟[:s], 𝒟[:a]) for d in πs]...)
+				b = sum(bs .* oh, dims=1)
+			else
+				b = value(πs[1], 𝒟[:s])
+			end
+		else
+			b = 0f0
+		end
+		b
 	end
 	
-	b = Flux.ignore_derivatives() do
+	# Compute the log probability
+	if length(πs) > 1
+		ids = 𝒟[:id][:]
+		oh = Flux.onehotbatch(𝒟[:id][:], collect(1:length(πs)))
+		logpdfs = vcat([logpdf(d, 𝒟[:s], 𝒟[:a]) for d in πs]...)
+		new_probs = sum(logpdfs .* oh, dims=1)
+	else
+		new_probs = logpdf(πs[1], 𝒟[:s], 𝒟[:a])
+	end
+	
+	# Log relevant parameters
+	ignore_derivatives() do
 		info[:kl] = mean(𝒟[:logprob] .- new_probs)
-		info[:mean_weight] = mean(𝒟[:traj_importance_weight])
-		b = 𝒫[:use_baseline] ? value(π, 𝒟[:s]) : 0f0
 		info[:mean_baseline] = mean(b)
-		if act isa MISPolicy
-			for i=1:length(trainable_policies(act))
-				info["index$(i)_frac"] = sum(𝒟[:id] .== i) / length(𝒟[:id])
-			end
-		end
-
-		b
 	end 
 	
 	-mean(new_probs .* ((𝒟[:return] .> 𝒫[:f_target_train][1]) .* 𝒟[:traj_importance_weight] .- b))
 end
 
 function value_loss(π, 𝒫, D; kwargs...)
-	vals = value(π, D[:s]) #TODO: Maybe try with multiple
+	πs = trainable_policies(π)
+	if length(πs) > 1
+		ids = 𝒟[:id][:]
+		valss = vcat([value(d, D[:s]) for d in πs]...)
+		vals = sum(valss .* Flux.onehotbatch(ids, collect(1:length(πs))), dims=1)
+	else
+		vals = value(πs[1], D[:s])
+	end
+	
 	returns = (D[:return] .> 𝒫[:f_target_train][1]) .* D[:traj_importance_weight]
 	
 	Flux.mse(vals, returns)

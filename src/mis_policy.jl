@@ -1,3 +1,5 @@
+trainable_policies(π::N) where N <: NetworkPolicy = [π]
+
 ## Multiple Importance Sampling distribution (Mixed per trajectory)
 mutable struct MISPolicy <: NetworkPolicy
 	distributions
@@ -6,6 +8,7 @@ mutable struct MISPolicy <: NetworkPolicy
 	i
 	current_distribution
 	MISPolicy(distributions, Nsamps=ones(length(distributions)); weight_style=:DM, i=0, current_distribution=1) = new(distributions, Nsamps, weight_style, i, current_distribution)
+	MISPolicy(distributions, Nsamps, weight_style, i, current_distribution) = new(distributions, Nsamps, weight_style, i, current_distribution)
 end
 
 function trainable_policies(π::MISPolicy)

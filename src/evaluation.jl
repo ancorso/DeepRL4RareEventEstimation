@@ -1,4 +1,5 @@
 using Parameters, Random
+import Zygote: ignore_derivatives
 
 @with_kw mutable struct EvaluationSolver <: Solver
     agent::PolicyParams # Policy
@@ -16,10 +17,10 @@ using Parameters, Random
     required_columns = Symbol[:traj_importance_weight, :return]
 	
 	# Stuff specific to estimation
-	training_type = :none# Type of training loop, either :policy_gradient, :value, :none
-	recent_batch_only = true# Whether or not to train on all prior data or just the recent batch
+	training_type = :none # Type of training loop, either :policy_gradient, :value, :none
+	recent_batch_only = true # Whether or not to train on all prior data or just the recent batch
 	weight_fn = (agent, data, ep) -> trajectory_pdf(agent.pa, data, ep) / trajectory_pdf(agent.π, data, ep)
-	P=agent.pa # The nominal distribution (state-dependent in general)
+	agent_pretrain=nothing # Function to pre-train the agent before any rollouts
 
 	# Create buffer to store all of the samples
 	buffer_size = N*max_steps
@@ -42,6 +43,30 @@ function gradual_target_increase(𝒮, 𝒟; info)
 	target = min(elite_target_min, 𝒮.𝒫[:f_target][1])
 	info[:f_target_train] = target
 	𝒮.𝒫[:f_target_train][1] = target
+end
+
+function assign_mode_ids(𝒮, 𝒟; info=Dict())
+		πs = trainable_policies(𝒮.agent.π)
+		length(πs) == 1 && return # If there is only one trainable policy, only it will be trained
+		eps = episodes(𝒟)
+		for ep_t in eps
+			if 𝒟[:id][1, ep_t[1]] == 0
+				ep = ep_t[1]:ep_t[2]
+				# update the failure mode id of each sample (this might change over time as well)
+				id = argmax([trajectory_pdf(d, 𝒟, ep) for d in πs])
+				𝒟[:id][1, ep] .= id
+		
+				# Update the logprobabiliyt of the (s,a) tuple for the new failure mode
+				if haskey(𝒟, :logprob)
+					𝒟[:logprob][:, ep] .= logpdf(𝒮.agent.π.distributions[id], 𝒟[:s][:,ep], 𝒟[:a][:,ep])
+				end
+			end
+		end
+		
+		# Record the fraction of samples from each
+		for i=1:length(πs)
+			info["index$(i)_frac"] = sum(𝒟[:id] .== i) / length(𝒟[:id])
+		end
 end
 
 function policy_gradient_training(𝒮::EvaluationSolver, buffer)
@@ -103,8 +128,13 @@ end
 function POMDPs.solve(𝒮::EvaluationSolver, mdp)
 	@assert haskey(𝒮.𝒫, :f_target)
 	
-	# Check if we are adapting multiple distributions or just 1
-	ismultimodal = 𝒮.agent.π isa MISPolicy
+	# Pre-train the policy if a function is provided
+	if !isnothing(𝒮.agent_pretrain) && 𝒮.i == 0
+		𝒮.agent_pretrain(𝒮.agent.π)
+		if !isnothing(𝒮.agent.π⁻)
+			𝒮.agent.π⁻=deepcopy(𝒮.agent.π)
+		end 
+	end
 	
     # Construct the training buffer, constants, and sampler
     s = Sampler(mdp, 𝒮.agent, S=𝒮.S, required_columns=𝒮.required_columns, max_steps=𝒮.max_steps, traj_weight_fn=𝒮.weight_fn)
@@ -123,6 +153,11 @@ function POMDPs.solve(𝒮::EvaluationSolver, mdp)
 		start_index=length(𝒮.buffer) + 1
 		episodes!(s, 𝒮.buffer, Neps=𝒮.ΔN, explore=true, i=𝒮.i, cb=(D) -> 𝒮.post_sample_callback(D, info=info, 𝒮=𝒮))
 		end_index=length(𝒮.buffer)
+		
+		# Record the average weight of the samples
+		ep_ends = 𝒮.buffer[:episode_end][1,start_index:end_index]
+		info[:mean_weight] = sum(𝒮.buffer[:traj_importance_weight][1,start_index:end_index][ep_ends]) / sum(ep_ends)
+		@assert !isnan(info[:mean_weight])
 
 		# If we are training then update required values and train
 		training_info = Dict()
@@ -131,20 +166,10 @@ function POMDPs.solve(𝒮::EvaluationSolver, mdp)
 			𝒟 = 𝒮.recent_batch_only ? ExperienceBuffer(minibatch(𝒮.buffer, start_index:end_index)) : 𝒮.buffer
 			
 			# Pre-train callback, used to make changes to the buffer and update f
-	        𝒮.pre_train_callback(𝒮, 𝒟, info=info)
-
-			if ismultimodal
-				eps = episodes(𝒟)
-				for ep_t in eps
-					ep = ep_t[1]:ep_t[2]
-					# update the failure mode id of each sample (this might change over time as well)
-					id = argmax([trajectory_pdf(d, 𝒟, ep) for d in trainable_policies(𝒮.agent.π)])
-					𝒟[:id][1, ep] .= id
+	        𝒮.pre_train_callback(𝒮, 𝒟; info)
 			
-					# Update the logprobabiliyt of the (s,a) tuple for the new failure mode
-					𝒟[:logprob][:, ep] .= logpdf(𝒮.agent.π.distributions[id], 𝒟[:s][:,ep], 𝒟[:a][:,ep])
-				end
-			end
+			𝒮.agent.π isa MISPolicy && assign_mode_ids(𝒮, 𝒟; info)
+			
 			
 	        # Train the networks
 	        if 𝒮.training_type == :policy_gradient
