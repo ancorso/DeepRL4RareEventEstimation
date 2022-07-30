@@ -4,27 +4,44 @@ include("../environments/pendulum_problem.jl")
 
 ## Parameters
 # Experiment params
-Neps=1000
-Neps_gt=1_000_000
-Ntrials=1
-dir="results/pendulum_discrete_v2/"
+Neps=100_000
+Neps_gt=10_000_00
+Ntrials=5
+dir="results/pendulum_continuous/"
 
 # Problem setup params
 failure_target=π/4
 dt = 0.1
 Nsteps_per_episode = 20
-noise_dist=Normal(0, 0.4)
-Px, mdp = gen_topple_mdp(px=noise_dist, Nsteps=Nsteps_per_episode, dt=dt, failure_thresh=failure_target)
-xs = Px.distribution.support
+noise_dist=Normal(0, 0.3)
+Px, mdp = gen_topple_mdp(px=noise_dist, Nsteps=Nsteps_per_episode, dt=dt, failure_thresh=failure_target, discrete=false)
 S = state_space(mdp)
 A = action_space(Px)
 
 # Networks
-net(out_act...;Nout=A.N) = Chain(Dense(3, 32, relu), Dense(32, 32, relu), Dense(32, Nout, out_act...)) # Basic architecture
-V() = ContinuousNetwork(net(sigmoid, Nout=1)) # Value network
-Π() = DiscreteNetwork(net(), xs, always_stochastic=true) # Actor network (Policy gradient)
-AC() = ActorCritic(Π(), V()) # Actor-crtic for baseline approaches
-Q() = DiscreteNetwork(net(sigmoid, Nout=A.N), xs, always_stochastic=true, logit_conversion=estimator_logits(Px)) # Q network for value-based
+net(out_act...;Nin=3, Nout=1) = Chain(Dense(Nin, 32, relu), Dense(32, 32, relu), Dense(32, Nout, out_act...)) # Basic architecture
+V() = ContinuousNetwork(net(sigmoid)) # Value network
+function Π()
+	base = net(Nout=4)
+	μ = ContinuousNetwork(Chain(base..., Dense(4, 1)))
+	logΣ = ContinuousNetwork(Chain(base..., Dense(4, 1)))
+	GaussianPolicy(μ, logΣ, true)
+end
+function Π_mixture()
+	base = net(Nout=4)
+	
+	mu1 = ContinuousNetwork(Chain(base..., Dense(4, 1)))
+    logΣ1 = ContinuousNetwork(Chain(base..., Dense(4, 1)))
+	
+    mu2 = ContinuousNetwork(Chain(base..., Dense(4, 1)))
+    logΣ2 = ContinuousNetwork(Chain(base..., Dense(4, 1)))
+	
+    αs = ContinuousNetwork(Chain(base..., Dense(4, 2), softmax), 2)
+    MixtureNetwork([GaussianPolicy(mu1, logΣ1, true), GaussianPolicy(mu2, logΣ2, true)], αs)
+end
+AC(A=Π()) = ActorCritic(A, V()) # Actor-crtic for baseline approaches
+QSA() = ContinuousNetwork(net(sigmoid, Nin=4)) # Q network for value-based
+AQ(A=Π()) = ActorCritic(A, QSA()) # Actor-critic for continuous value-based approach
 
 
 # Solver parameters
@@ -48,9 +65,10 @@ pg_params(name, π, use_baseline=false) = (ΔN=200,
 										  agent_pretrain=use_baseline ? pretrain_AV(mdp, Px, v_target=0.1) : pretrain_policy(mdp, Px),
 										  shared_params(name, π)...)
 vb_params(name, π) = (ΔN=100,
-					  training_buffer_size=40000, 
+					  train_actor=true,
+					  training_buffer_size=40000,
 					  c_opt=(epochs=100,), 
-					  agent_pretrain=pretrain_value(mdp, Px, target=0.1),
+					  agent_pretrain=pretrain_AQ(mdp, Px, v_target=0.1),
 					  shared_params(name, π)...)
 
 
@@ -60,13 +78,13 @@ vb_params(name, π) = (ΔN=100,
 # gt_std = std(data[:est])[end]
 
 # Ground truth experiment
-# D = episodes!(Sampler(mdp, PolicyParams(π=Px, pa=Px)), explore=true, Neps = Neps)
+# D = episodes!(Sampler(mdp, PolicyParams(π=Px, pa=Px)), explore=true, Neps = 1000)
 # vals = D[:r][:][D[:done][:] .== 1]
 # histogram(vals, label="Pendulum Topple", xlabel="Return", ylabel="Count", title="Distribution of Returns")
 # sum(D[:r] .> π/4) / sum(D[:done][:] .== 1)
 
-gt = 2.5333333333333334e-5
-gt_std = 4.163331998932266e-6
+gt = 1.96f-5
+gt_std = 9.823442f-7
 plot_init = ()->plot(1:Neps, x->gt, linestyle=:dash, color=:black, ylims=(0,0.0001))
 
 # Create our "run_experiment function"
@@ -80,10 +98,13 @@ run_experiment(()->PolicyGradientIS(;pg_params("PG", Π())...), "PG")
 run_experiment(()->PolicyGradientIS(;pg_params("PG_baseline", AC(), true)...), "PG_baseline")
 run_experiment(()->PolicyGradientIS(;pg_params("PG_defensive", MISPolicy([Π(), Px], [3, 1]))...), "PG_defensive")
 run_experiment(()->PolicyGradientIS(;pg_params("PG_defensive_baseline", MISPolicy([AC(), Px], [3, 1]), true)...), "PG_defensive_baseline")
-run_experiment(()->PolicyGradientIS(;pg_params("PG_MIS", MISPolicy([Π(), Π(), Π(), Px], [1, 1, 1, 1]))...), "PG_MIS")
+run_experiment(()->PolicyGradientIS(;pg_params("PG_MIS", MISPolicy([Π(), Π(), Px], [1, 1, 1]))...), "PG_MIS")
+run_experiment(()->PolicyGradientIS(;pg_params("PG_mixture", Π_mixture())...), "PG_mixture")
+run_experiment(()->PolicyGradientIS(;pg_params("PG_mixture_baseline", AC(Π_mixture()), true)...), "PG_mixture_baseline")
 
-run_experiment(()->ValueBasedIS(;vb_params("VB_nopretrain", Q())..., agent_pretrain=nothing),  "VB_nopretrain")
-run_experiment(()->ValueBasedIS(;vb_params("VB", Q())...),  "VB")
-run_experiment(()->ValueBasedIS(;vb_params("VB_defensive", MISPolicy([Q(), Px], [3, 1]))...), "VB_defensive")
-run_experiment(()->ValueBasedIS(;vb_params("VB_MIS", MISPolicy([Q(), Q(), Q(), Px], [1, 1, 1, 1]))...),  "VB_MIS")
+run_experiment(()->ValueBasedIS(;vb_params("VB_nopretrain", AQ())..., agent_pretrain=nothing),  "VB_nopretrain")
+run_experiment(()->ValueBasedIS(;vb_params("VB", AQ())...),  "VB")
+run_experiment(()->ValueBasedIS(;vb_params("VB_defensive", MISPolicy([AQ(), Px], [3, 1]))...), "VB_defensive")
+run_experiment(()->ValueBasedIS(;vb_params("VB_MIS", MISPolicy([AQ(), AQ(), Px], [1, 1, 1]))...),  "VB_MIS")
+run_experiment(()->ValueBasedIS(;vb_params("VB_mixture", AQ(Π_mixture()))...),  "VB_MIS")
 

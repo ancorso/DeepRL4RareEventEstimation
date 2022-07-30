@@ -24,8 +24,10 @@ function pgis_loss(π, 𝒫, 𝒟; info = Dict())
 		oh = Flux.onehotbatch(𝒟[:id][:], collect(1:length(πs)))
 		logpdfs = vcat([logpdf(d, 𝒟[:s], 𝒟[:a]) for d in πs]...)
 		new_probs = sum(logpdfs .* oh, dims=1)
+		target = reshape(𝒫[:f_target_train][ids], 1, :)
 	else
 		new_probs = logpdf(πs[1], 𝒟[:s], 𝒟[:a])
+		target = 𝒫[:f_target_train][1]
 	end
 	
 	# Log relevant parameters
@@ -34,7 +36,7 @@ function pgis_loss(π, 𝒫, 𝒟; info = Dict())
 		info[:mean_baseline] = mean(b)
 	end 
 	
-	-mean(new_probs .* ((𝒟[:return] .> 𝒫[:f_target_train][1]) .* 𝒟[:traj_importance_weight] .- b))
+	-mean(new_probs .* ((𝒟[:return] .> target) .* 𝒟[:traj_importance_weight] .- b))
 end
 
 function value_loss(π, 𝒫, D; kwargs...)
@@ -54,17 +56,17 @@ end
 
 function PolicyGradientIS(;agent::PolicyParams,
 			  ΔN,
-			  N_elite_candidate=ΔN,
 			  use_baseline=false,
 			  elite_frac=0.1,
+			  target_kl = 0.015,
 			  f_target,
               a_opt::NamedTuple=(;), 
               c_opt::NamedTuple=(;), 
               log::NamedTuple=(;), 
               required_columns=[],
+			  training_buffer_size,
 			  buffer_size,
 			  name = "pgis",
-			  recent_batch_only=true,
               kwargs...)
     if use_baseline
 		name = string(name, "_baseline")
@@ -72,17 +74,18 @@ function PolicyGradientIS(;agent::PolicyParams,
 	else
 		c_opt = nothing
 	end
+	f_target_train = [f_target]
 	# If MIS, make sure we record an ID. 
 	if agent.π isa MISPolicy
 		push!(required_columns, :id)
+		f_target_train = fill(f_target, length(trainable_policies(agent.π)))
 	end
     EvaluationSolver(;agent=agent,
-                    𝒫=(;use_baseline, elite_frac, f_target=[f_target], f_target_train=[f_target], N_elite_candidate),
+                    𝒫=(;use_baseline, elite_frac, f_target=[f_target], f_target_train),
 					buffer_size,
 					training_type=:policy_gradient,
-					recent_batch_only=recent_batch_only,
                     log=LoggerParams(;dir = "log/$name", log...),
-                    a_opt=TrainingParams(;loss=pgis_loss, early_stopping = (infos) -> (infos[end][:kl] > 0.015), name = "actor_", a_opt...),
+                    a_opt=TrainingParams(;loss=pgis_loss, early_stopping = (infos) -> (infos[end][:kl] > target_kl), name = "actor_", max_batches=1000, a_opt...),
                     c_opt=c_opt,
                     required_columns = unique([required_columns..., :logprob, :return, :traj_importance_weight]),
 					pre_train_callback=gradual_target_increase,
