@@ -55,45 +55,10 @@ vb_params(name, π) = (ΔN=4,
 					  shared_params(name, π)...)
 
 
-## Get the ground truth comparison
-# data = experiment_setup(;mdp, Ntrials, dir)(()->MCSolver(;mc_params(Neps_gt)...), "gt")
-# gt = mean(data[:est])[end]
-# gt_std = std(data[:est])[end]
-
-# Ground truth experiment
-# D = episodes!(Sampler(mdp, PolicyParams(π=Px, pa=Px)), explore=true, Neps = Neps)
-# vals = D[:r][:][D[:done][:] .== 1]
-# histogram(vals, label="Pendulum Topple", xlabel="Return", ylabel="Count", title="Distribution of Returns")
-# sum(D[:r] .> π/4) / sum(D[:done][:] .== 1)
-
 gt = 2.5333333333333334e-5
-gt_std = 4.163331998932266e-6
-plot_init = ()->plot(1:Neps, x->gt, linestyle=:dash, color=:black, ylims=(0,0.0001))
 
 # Create our "run_experiment function"
 run_experiment = experiment_setup(;mdp, Ntrials, dir, plot_init)
-
-## Experiments: Compare a bunch of different variance reduction techniques
-run_experiment(()->MCSolver(;mc_params()...), "MC")
-
-run_experiment(()->PolicyGradientIS(;pg_params("PG_nopretrain", Π())..., agent_pretrain=nothing), "PG_nopretrain")
-run_experiment(()->PolicyGradientIS(;pg_params("PG", Π())...), "PG")
-run_experiment(()->PolicyGradientIS(;pg_params("PG_baseline", AC(), true)...), "PG_baseline")
-run_experiment(()->PolicyGradientIS(;pg_params("PG_defensive", MISPolicy([Π(), Px], [3, 1]))...), "PG_defensive")
-run_experiment(()->PolicyGradientIS(;pg_params("PG_defensive_baseline", MISPolicy([AC(), Px], [3, 1]), true)...), "PG_defensive_baseline")
-<<<<<<< HEAD
-run_experiment(()->PolicyGradientIS(;pg_params("PG_MIS", MISPolicy([Π(), Π(), Π(), Px], [1, 1, 1, 1]))...), "PG_MIS")
-=======
-run_experiment(()->PolicyGradientIS(;pg_params("PG_MIS", MISPolicy([Π(), Π(), Px], [1, 1, 1]))...), "PG_MIS")
->>>>>>> reseting to remove big files
-
-run_experiment(()->ValueBasedIS(;vb_params("VB_nopretrain", Q())..., agent_pretrain=nothing),  "VB_nopretrain")
-run_experiment(()->ValueBasedIS(;vb_params("VB", Q())...),  "VB")
-run_experiment(()->ValueBasedIS(;vb_params("VB_defensive", MISPolicy([Q(), Px], [3, 1]))...), "VB_defensive")
-<<<<<<< HEAD
-run_experiment(()->ValueBasedIS(;vb_params("VB_MIS", MISPolicy([Q(), Q(), Q(), Px], [1, 1, 1, 1]))...),  "VB_MIS")
-=======
-run_experiment(()->ValueBasedIS(;vb_params("VB_MIS", MISPolicy([Q(), Q(), Px], [1, 1, 1]))...),  "VB_MIS")
 
 ## Stuff to generate intro figures
 using BSON, Plots, Distributions
@@ -155,5 +120,4 @@ end
 p
 
 savefig("estimation.tex")
->>>>>>> reseting to remove big files
 

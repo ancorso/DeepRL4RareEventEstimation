@@ -61,13 +61,14 @@ mc_params(N=Neps) = (agent=PolicyParams(;π=Px, pa=Px),
 			 
 pg_params(name, π, use_baseline=false) = (ΔN=200, 
 										  use_baseline,
+										  c_opt=(;max_batches=1000),
 										  training_buffer_size=200*Nsteps_per_episode,
 										  agent_pretrain=use_baseline ? pretrain_AV(mdp, Px, v_target=0.1) : pretrain_policy(mdp, Px),
 										  shared_params(name, π)...)
-vb_params(name, π) = (ΔN=100,
+vb_params(name, π) = (ΔN=4,
 					  train_actor=true,
 					  training_buffer_size=40000,
-					  c_opt=(epochs=100,), 
+					  c_opt=(epochs=20,), 
 					  agent_pretrain=pretrain_AQ(mdp, Px, v_target=0.1),
 					  shared_params(name, π)...)
 
@@ -106,5 +107,16 @@ run_experiment(()->ValueBasedIS(;vb_params("VB_nopretrain", AQ())..., agent_pret
 run_experiment(()->ValueBasedIS(;vb_params("VB", AQ())...),  "VB")
 run_experiment(()->ValueBasedIS(;vb_params("VB_defensive", MISPolicy([AQ(), Px], [3, 1]))...), "VB_defensive")
 run_experiment(()->ValueBasedIS(;vb_params("VB_MIS", MISPolicy([AQ(), AQ(), Px], [1, 1, 1]))...),  "VB_MIS")
+<<<<<<< HEAD
 run_experiment(()->ValueBasedIS(;vb_params("VB_mixture", AQ(Π_mixture()))...),  "VB_MIS")
+=======
+run_experiment(()->ValueBasedIS(;vb_params("VB_mixture", AQ(Π_mixture()))...),  "VB_mixture")
+
+𝒮 = PolicyGradientIS(;pg_params("PG_MIS", MISPolicy([Π(), Π(), Px], [1, 1, 1]))...)
+solve(𝒮, mdp)
+
+epis = episodes(DATASET)
+
+collect(epis)[end]
+>>>>>>> reseting to remove big files
 
