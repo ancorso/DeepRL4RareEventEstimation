@@ -81,79 +81,10 @@ run_experiment(()->PolicyGradientIS(;pg_params("PG", Π())...), "PG")
 run_experiment(()->PolicyGradientIS(;pg_params("PG_baseline", AC(), true)...), "PG_baseline")
 run_experiment(()->PolicyGradientIS(;pg_params("PG_defensive", MISPolicy([Π(), Px], [3, 1]))...), "PG_defensive")
 run_experiment(()->PolicyGradientIS(;pg_params("PG_defensive_baseline", MISPolicy([AC(), Px], [3, 1]), true)...), "PG_defensive_baseline")
-<<<<<<< HEAD
-run_experiment(()->PolicyGradientIS(;pg_params("PG_MIS", MISPolicy([Π(), Π(), Π(), Px], [1, 1, 1, 1]))...), "PG_MIS")
-=======
 run_experiment(()->PolicyGradientIS(;pg_params("PG_MIS", MISPolicy([Π(), Π(), Px], [1, 1, 1]))...), "PG_MIS")
->>>>>>> reseting to remove big files
+
 
 run_experiment(()->ValueBasedIS(;vb_params("VB_nopretrain", Q())..., agent_pretrain=nothing),  "VB_nopretrain")
 run_experiment(()->ValueBasedIS(;vb_params("VB", Q())...),  "VB")
 run_experiment(()->ValueBasedIS(;vb_params("VB_defensive", MISPolicy([Q(), Px], [3, 1]))...), "VB_defensive")
-<<<<<<< HEAD
-run_experiment(()->ValueBasedIS(;vb_params("VB_MIS", MISPolicy([Q(), Q(), Q(), Px], [1, 1, 1, 1]))...),  "VB_MIS")
-=======
 run_experiment(()->ValueBasedIS(;vb_params("VB_MIS", MISPolicy([Q(), Q(), Px], [1, 1, 1]))...),  "VB_MIS")
-
-## Stuff to generate intro figures
-using BSON, Plots, Distributions
-pgfplotsx()
-
-
-MC_data = BSON.load("results/pendulum_discrete_v2/MC.bson")[:data]
-PG_baseline_data = BSON.load("results/pendulum_discrete_v2/PG_baseline.bson")[:data]
-
-Neps = length(MC_data[:ws][1])
-indices = 1:100:100000
-plot([1,Neps], x->gt, linestyle=:dash, color=:black, ylims=(0,0.0001), label="Ground Truth", xlabel="Episodes", ylabel="Rare Event Probability", color_palette=:Dark2_3, legend=:topright, xticks=[5e4, 1e5], yticks=[0, 5e-5, 1e-4])
-plot!(collect(1:Neps)[indices], mean(MC_data[:est])[indices], ribbon=std(MC_data[:est])[indices], label="MC")
-plot!(collect(1:Neps)[indices], mean(PG_baseline_data[:est])[indices], ribbon=std(PG_baseline_data[:est])[indices], label="PG-AIS (ours)")
-
-
-savefig("comparison.tex")
-
-# Train one:
-
-𝒮_ppo = DQN(;π=DiscreteNetwork(net(Nout=A.N), xs), S=S, ΔN=4, N=100000)
-solve(𝒮_ppo, mdp)
-
-𝒮_pgais = PolicyGradientIS(;pg_params("PG_baseline", AC(), true)...)
-solve(𝒮_pgais, mdp)
-
-
-D_pgais = ExperienceBuffer(episodes!(Sampler(mdp, 𝒮_pgais.agent.π, episode_checker=(b, s, e) -> sum(b[:r][1,s:e]) > π/4), Neps=50))
-
-D_ppo = ExperienceBuffer(episodes!(Sampler(mdp, 𝒮_ppo.agent.π, episode_checker=(b, s, e) -> sum(b[:r][1,s:e]) > π/4), Neps=50))
-
-
-
-p = plot(xlabel="Time", ylabel="Angle", color_palette=:Dark2_3)
-hline!([π/4, -π/4], color=:black, linestyle=:dash, label="Failure Threshold", legend=:topleft)
-
-epis_ppo = episodes(D_ppo)
-isfirst=true
-for ep in epis_ppo
-	plot!(D_ppo[:s][1,ep[1]:ep[2]], D_ppo[:s][2,ep[1]:ep[2]], label=isfirst ? "AST" : "", alpha=0.3, color=2)
-	isfirst=false
-end
-epis_pgais = episodes(D_pgais)
-isfirst=true
-for ep in epis_pgais
-	plot!(D_pgais[:s][1,ep[1]:ep[2]], D_pgais[:s][2,ep[1]:ep[2]], label=isfirst ? "PG-AIS (ours)" : "", alpha=0.3, color=3)
-	isfirst=false
-end
-p
-
-savefig("estimation.tex")
-
-epis_pgais = episodes(D_pgais)
-isfirst=true
-for ep in epis_pgais
-	plot!(D_pgais[:s][1,ep[1]:ep[2]], D_pgais[:s][2,ep[1]:ep[2]], label=isfirst ? "PG-AIS (ours)" : "", alpha=0.3, color=3)
-	isfirst=false
-end
-p
-
-savefig("estimation.tex")
->>>>>>> reseting to remove big files
-
