@@ -81,6 +81,18 @@ function actor_loss_continuous_is(π, 𝒫, 𝒟; info=Dict())
 	-mean(ws .* f_sa .* pa .* logqa ./ (qa .* f_s))
 end
 
+function td_error_mis(π, 𝒫, 𝒟, y)
+	πs = trainable_policies(π)
+	if length(πs) > 1
+		ids = 𝒟[:id][:]
+		vs = vcat([value(d, 𝒟[:s], 𝒟[:a]) for d in πs]...)
+		vs = sum(vs .* Flux.onehotbatch(ids, collect(1:length(πs))), dims=1)
+	else
+		vs = value(πs[1], 𝒟[:s], 𝒟[:a])
+	end
+	abs.(vs .- y)
+end
+
 function td_loss_mis(;loss=Flux.mse, name=:Qavg, s_key=:s, a_key=:a, weight=nothing)
     (π, 𝒫, 𝒟, y; info=Dict()) -> begin
 		πs = trainable_policies(π)
@@ -105,6 +117,7 @@ function ValueBasedIS(;agent::PolicyParams,
 			  prioritized = true,
 			  training_buffer_size,
 			  buffer_size,
+			  priority_fn=td_error_mis,
 			  train_actor=false,
 			  elite_frac = 0.1,
 			  N_samples=5, # Number of samples for a value estimate of the a continuous policy
@@ -144,6 +157,7 @@ function ValueBasedIS(;agent::PolicyParams,
                     a_opt=a_opt,
 					c_opt=TrainingParams(;loss=td_loss_mis(weight=:fwd_importance_weight), name="critic_", epochs=ΔN, c_opt...),
                     target_fn=Ef_target,
+					priority_fn,
 					pre_train_callback=gradual_target_increase,
                     kwargs...)
 end
