@@ -24,9 +24,11 @@ end
 function value_estimate(π::ActorCritic, s, 𝒫)
 	samps = []
 	for i=1:𝒫[:N_samples]
-		a, logqa = exploration(π, s)
-		w = exp.(logpdf(𝒫[:px], s, a) .- logqa)
-		push!(samps, value(π, s, a) .* w)
+		a, logqa = exploration(𝒫[:px], s)
+		# a, logqa = exploration(π, s)
+		# w = exp.(logpdf(𝒫[:px], s, a) .- logqa)
+		# push!(samps, value(π, s, a) .* w)
+		push!(samps, value(π, s, a))
 	end
 	return mean(samps)
 end
@@ -72,7 +74,8 @@ function actor_loss_continuous_is(π, 𝒫, 𝒟; info=Dict())
 	
 	ws = ignore_derivatives() do
 		ws = 𝒟[:fwd_importance_weight] ./ 𝒟[:importance_weight]
-		ws ./ mean(ws)
+		ws[𝒟[:importance_weight] .== 0f0] .= 0f0
+		ws
 	end
 	
 	-mean(ws .* f_sa .* pa .* logqa ./ (qa .* f_s))
@@ -94,11 +97,12 @@ function td_loss_mis(;loss=Flux.mse, name=:Qavg, s_key=:s, a_key=:a, weight=noth
             info[name] = mean(Q)
         end
         
-        loss(Q, y, agg = isnothing(weight) ? mean : Crux.weighted_mean(𝒟[weight] ./ mean(𝒟[weight])))
+        loss(Q, y, agg = isnothing(weight) ? mean : Crux.weighted_mean(𝒟[weight]))
     end
 end
 
 function ValueBasedIS(;agent::PolicyParams,
+			  prioritized = true,
 			  training_buffer_size,
 			  buffer_size,
 			  train_actor=false,
@@ -109,7 +113,7 @@ function ValueBasedIS(;agent::PolicyParams,
               a_opt::NamedTuple=(;), 
               c_opt::NamedTuple=(;), 
               log::NamedTuple=(;), 
-              required_columns=[],
+              required_columns=Symbol[],
 			  name = "value_based_is",
               kwargs...)
     if train_actor
@@ -126,17 +130,20 @@ function ValueBasedIS(;agent::PolicyParams,
 		f_target_train = fill(f_target, length(trainable_policies(agent.π)))
 	end
 	
+	required_columns=unique([required_columns..., :return, :traj_importance_weight, :fwd_importance_weight, :importance_weight])
+	
     EvaluationSolver(;agent=PolicyParams(agent, π⁻=deepcopy(agent.π)),
                     𝒫=(;px=agent.pa, f_target=[f_target], f_target_train, elite_frac, N_samples),
 					ΔN=ΔN,
 					training_buffer_size,
 					buffer_size,
+					required_columns,
+					buffer = ExperienceBuffer(S, agent.space, buffer_size, required_columns, prioritized=prioritized),
 					training_type=:value,
                     log=LoggerParams(;dir = "log/$name", log...),
                     a_opt=a_opt,
 					c_opt=TrainingParams(;loss=td_loss_mis(weight=:fwd_importance_weight), name="critic_", epochs=ΔN, c_opt...),
                     target_fn=Ef_target,
-                    required_columns=unique([required_columns..., :return, :traj_importance_weight, :fwd_importance_weight, :importance_weight]),
 					pre_train_callback=gradual_target_increase,
                     kwargs...)
 end

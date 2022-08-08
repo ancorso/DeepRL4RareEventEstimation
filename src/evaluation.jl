@@ -106,9 +106,17 @@ function value_training(𝒮::EvaluationSolver, 𝒟)
         
         # Compute target
         y = 𝒮.target_fn(𝒮.agent.π⁻, 𝒮.𝒫, 𝒟batch, i=𝒮.i)
+		
+		err = cpu(𝒮.priority_fn(𝒮.agent.π, 𝒮.𝒫, 𝒟batch, y))
+		
+		maxy = maximum(y)
+		maxerr = maximum(err)
+		if maxy > 1.1 || maxerr > 1.1
+			println("max y: ", maximum(y), " max err: ", maximum(err))
+		end
         
         # # Update priorities (for prioritized replay)
-        # isprioritized(𝒮.buffer) && update_priorities!(𝒮.buffer, 𝒟.indices, cpu(𝒮.priority_fn(𝒮.agent.π, 𝒮.𝒫, 𝒟, y)))
+        isprioritized(𝒮.buffer) && update_priorities!(𝒮.buffer, 𝒟batch.indices, err)
         
         # Train the critic
         if ((epoch-1) % 𝒮.c_opt.update_every) == 0
