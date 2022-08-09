@@ -65,20 +65,26 @@ function pretrain_AQ(mdp, P; v_target, kwargs...)
 end
 
 
-function experiment_setup(;mdp, Ntrials, dir, plot_init=()->plot())
+function experiment_setup(;mdp, Ntrials, dir, plot_init=()->plot(), gt=nothing)
 	try mkdir(dir) catch end
 	
 	(𝒮fn, name=nothing) -> begin 
-		data = Dict(:est => [], :fs => [], :ws =>[])
+    data = Dict(k => [] for k in [:est, :fs, :ws, :gt, :rel_err, :abs_log_err])
 		failures = 0
 		successes = 0
 		while true
 			S = 𝒮fn()
 			try
 				fs, ws = solve(S, mdp)
-			    push!(data[:est], cumsum(fs .* ws) ./ (1:length(fs)))
-			    push!(data[:fs], fs)
-			    push!(data[:ws], ws)
+        est = cumsum(fs .* ws) ./ (1:length(fs))
+        push!(data[:est], est)
+        push!(data[:fs], fs)
+        push!(data[:ws], ws)
+        if !isnothing(gt)
+          push!(data[:gt], gt)
+          push!(data[:rel_err], abs.(est .- gt) ./ gt)
+          push!(data[:abs_log_err], abs.(log.(est) .- log(gt)))
+        end
 				successes += 1
 			catch e
 				println(e)
