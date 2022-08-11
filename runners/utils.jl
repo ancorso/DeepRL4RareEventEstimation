@@ -4,17 +4,24 @@ include("../src/policy_gradient.jl")
 include("../src/value_based.jl")
 include("../src/mis_policy.jl")
 
+function quadrature_pts(μ, σ)
+	xi = Float32.(μ .+ sqrt(2)*σ*[-2.02018, -0.958572, 0.0, 0.958572, 2.02018])
+	xi = [[x] for x in xi]
+	wi = Float32.([0.0199532, 0.393619, 0.945309, 0.393619, 0.0199532] ./ sqrt(π))
+	xi, wi
+end
+
 function pretrain_value(mdp, P; target, Ndata=10000, Nepochs=100, batchsize=1024, value_args=(D)->D[:s])
 	(π) -> begin
 		# Sample a bunch of data
 		D = steps!(Sampler(mdp, P), explore=true, Nsteps=Ndata)
 		
 		# Put it into a flux dataloader
-		v = value(trainable_policies(π)[1], value_args(D))
+		v = value(all_policies(π)[1], value_args(D))
 		v .= target
 		d = Flux.Data.DataLoader((value_args(D), v), batchsize=batchsize)
 
-		for pol in trainable_policies(π)
+		for pol in all_policies(π)[trainable_indices(π)]
 			# Use maximum likelihood estimation
 			loss(x,y) = Flux.mse(pol(x), y)
 
@@ -32,7 +39,7 @@ function pretrain_policy(mdp, P; Ndata=10000, Nepochs=100, batchsize=1024)
 		# Put it into a flux dataloader
 		d = Flux.Data.DataLoader((D[:s], D[:a]), batchsize=batchsize)
 
-		for pol in trainable_policies(π)
+		for pol in all_policies(π)[trainable_indices(π)]
 			if actor(pol) isa MixtureNetwork
 				N = length(actor(pol).networks)
 				αtarget = 1f0 / N
@@ -50,8 +57,8 @@ function pretrain_AV(mdp, P; v_target, kwargs...)
 	vtrain = pretrain_value(mdp, P; target=v_target, kwargs...)
 	poltrain = pretrain_policy(mdp, P; kwargs...)
 	(π) -> begin
-		vtrain(π)
-		poltrain(π)
+		vtrain(critic(π))
+		poltrain(actor(π))
 	end
 end
 
@@ -59,8 +66,8 @@ function pretrain_AQ(mdp, P; v_target, kwargs...)
 	vtrain = pretrain_value(mdp, P; target=v_target, value_args=(D)->vcat(D[:s], D[:a]), kwargs...)
 	poltrain = pretrain_policy(mdp, P; kwargs...)
 	(π) -> begin
-		vtrain(π)
-		poltrain(π)
+		vtrain(critic(π))
+		poltrain(actor(π))
 	end
 end
 

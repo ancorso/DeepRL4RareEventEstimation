@@ -4,9 +4,9 @@ include("../environments/pendulum_problem.jl")
 
 ## Parameters
 # Experiment params
-Neps=100_000
+Neps=50_0
 Neps_gt=10_000_00
-Ntrials=5
+Ntrials=1
 dir="results/pendulum_continuous/"
 
 # Problem setup params
@@ -14,6 +14,10 @@ failure_target=π/4
 dt = 0.1
 Nsteps_per_episode = 20
 noise_dist=Normal(0, 0.3)
+
+# quadrature points -> https://jblevins.org/notes/quadrature
+xi, wi = quadrature_pts(noise_dist.μ, noise_dist.σ)
+
 Px, mdp = gen_topple_mdp(px=noise_dist, Nsteps=Nsteps_per_episode, dt=dt, failure_thresh=failure_target, discrete=false)
 S = state_space(mdp)
 A = action_space(Px)
@@ -43,7 +47,6 @@ AC(A=Π()) = ActorCritic(A, V()) # Actor-crtic for baseline approaches
 QSA() = ContinuousNetwork(net(sigmoid, Nin=4)) # Q network for value-based
 AQ(A=Π()) = ActorCritic(A, QSA()) # Actor-critic for continuous value-based approach
 
-
 # Solver parameters
 Nbuff = Neps*Nsteps_per_episode
 shared_params(name, π) = (agent=PolicyParams(;π, pa=Px), 
@@ -61,16 +64,19 @@ mc_params(N=Neps) = (agent=PolicyParams(;π=Px, pa=Px),
 			 
 pg_params(name, π, use_baseline=false) = (ΔN=200, 
 										  use_baseline,
-										  c_opt=(;max_batches=1000),
+										  c_opt=(;max_batches=200, batch_size=1024),
 										  training_buffer_size=200*Nsteps_per_episode,
 										  agent_pretrain=use_baseline ? pretrain_AV(mdp, Px, v_target=0.1) : pretrain_policy(mdp, Px),
 										  shared_params(name, π)...)
-vb_params(name, π) = (ΔN=4,
+vb_params(name, π) = (ΔN=20,
 					  train_actor=true,
-					  training_buffer_size=40000,
+					  training_buffer_size=3200*Nsteps_per_episode,
 					  c_opt=(epochs=20,), 
 					  agent_pretrain=pretrain_AQ(mdp, Px, v_target=0.1),
+					  xi,
+					  wi,
 					  shared_params(name, π)...)
+					  
 
 
 ## Get the ground truth comparison
@@ -97,15 +103,64 @@ run_experiment(()->MCSolver(;mc_params()...), "MC")
 run_experiment(()->PolicyGradientIS(;pg_params("PG_nopretrain", Π())..., agent_pretrain=nothing), "PG_nopretrain")
 run_experiment(()->PolicyGradientIS(;pg_params("PG", Π())...), "PG")
 run_experiment(()->PolicyGradientIS(;pg_params("PG_baseline", AC(), true)...), "PG_baseline")
-run_experiment(()->PolicyGradientIS(;pg_params("PG_defensive", MISPolicy([Π(), Px], [3, 1]))...), "PG_defensive")
-run_experiment(()->PolicyGradientIS(;pg_params("PG_defensive_baseline", MISPolicy([AC(), Px], [3, 1]), true)...), "PG_defensive_baseline")
-run_experiment(()->PolicyGradientIS(;pg_params("PG_MIS", MISPolicy([Π(), Π(), Px], [1, 1, 1]))...), "PG_MIS")
-run_experiment(()->PolicyGradientIS(;pg_params("PG_mixture", Π_mixture())...), "PG_mixture")
-run_experiment(()->PolicyGradientIS(;pg_params("PG_mixture_baseline", AC(Π_mixture()), true)...), "PG_mixture_baseline")
-
+run_experiment(()->PolicyGradientIS(;pg_params("PG_defensive", MISPolicy([Π(), Px]))...), "PG_defensive")
+run_experiment(()->PolicyGradientIS(;pg_params("PG_MIS2_nopretrain", MISPolicy([Π(), Π()]))..., agent_pretrain=nothing), "PG_MIS2_nopretrain")
+run_experiment(()->PolicyGradientIS(;pg_params("PG_MIS2", MISPolicy([Π(), Π()]))...), "PG_MIS2")
+run_experiment(()->PolicyGradientIS(;pg_params("PG_MIS2_defense", MISPolicy([Π(), Π(), Px]))...), "PG_MIS2_defense")
+run_experiment(()->PolicyGradientIS(;pg_params("PG_MIS2_baseline", MISPolicy([AC(), AC()]), true)...), "PG_MIS2_baseline")
+run_experiment(()->PolicyGradientIS(;pg_params("PG_MIS4_nopretrain", MISPolicy([Π(), Π(), Π(), Π()]))..., agent_pretrain=nothing), "PG_MIS4_nopretrain")
+run_experiment(()->PolicyGradientIS(;pg_params("PG_MIS4", MISPolicy([Π(), Π(), Π(), Π()]))...), "PG_MIS4")
+run_experiment(()->PolicyGradientIS(;pg_params("PG_MIS4_baseline", MISPolicy([AC(), AC(), AC(), AC()]), true)...), "PG_MIS4_baseline")
+# run_experiment(()->PolicyGradientIS(;pg_params("PG_mixture", Π_mixture())...), "PG_mixture")
+# run_experiment(()->PolicyGradientIS(;pg_params("PG_mixture_baseline", AC(Π_mixture()), true)...), "PG_mixture_baseline")
+# 
 run_experiment(()->ValueBasedIS(;vb_params("VB_nopretrain", AQ())..., agent_pretrain=nothing),  "VB_nopretrain")
 run_experiment(()->ValueBasedIS(;vb_params("VB", AQ())...),  "VB")
-run_experiment(()->ValueBasedIS(;vb_params("VB_defensive", MISPolicy([AQ(), Px], [3, 1]))...), "VB_defensive")
-run_experiment(()->ValueBasedIS(;vb_params("VB_MIS", MISPolicy([AQ(), AQ(), Px], [1, 1, 1]))...),  "VB_MIS")
-run_experiment(()->ValueBasedIS(;vb_params("VB_mixture", AQ(Π_mixture()))...),  "VB_mixture")
+run_experiment(()->ValueBasedIS(;vb_params("VB_defensive", MISPolicy([AQ(), Px]))...), "VB_defensive")
+run_experiment(()->ValueBasedIS(;vb_params("VB_MIS2", MISPolicy([AQ(), AQ()]))...),  "VB_MIS2")
+run_experiment(()->ValueBasedIS(;vb_params("VB_MIS4", MISPolicy([AQ(), AQ(), AQ(), AQ()]))...),  "VB_MIS4")
+# run_experiment(()->ValueBasedIS(;vb_params("VB_mixture", MISPolicy([AQ(Π_mixture()), Px], [3, 1]))...),  "VB_mixture")
 
+# function plot_results(fs, ws; p=plot(), kwargs...)
+# 	est = cumsum(fs .* ws) ./ (1:length(fs))
+# 	plot!(p, est; kwargs...)
+# end
+# 
+# p = plot(1:Neps, x->gt, linestyle=:dash, color=:black, ylims=(0,0.0001))
+# S1 = PolicyGradientIS(;pg_params("PG", Π())...)
+# fs1, ws1 = solve(S1, mdp)
+# plot_results(fs1, ws1, label="PG", p=p)
+# 
+# S2 = PolicyGradientIS(;pg_params("PG baseline", AC(), true)...)
+# fs2, ws2 = solve(S2, mdp)
+# plot_results(fs2, ws2, label="PG baseline ", p=p)
+# 
+# 
+# S3 = PolicyGradientIS(;pg_params("PG_MIS", MISPolicy([Π(), Π()], [0.5, 0.5]))...)
+# fs3, ws3 = solve(S3, mdp)
+# plot_results(fs3, ws3, label="PG_MIS", p=p)
+# 
+# 
+# S4 = PolicyGradientIS(;pg_params("PG_MIS_defense", MISPolicy([Π(), Π(), Px], [1/3,1/3,1/3]))...)
+# fs4, ws4 = solve(S4, mdp)
+# plot_results(fs4, ws4, label="PG_MIS_defense", p=p)
+# 
+# 
+# S5 = PolicyGradientIS(;pg_params("PG_MIS_baseline", MISV(), true)...)
+# fs5, ws5 = solve(S5, mdp)
+# plot_results(fs5, ws5, label="PG_MIS_baseline", p=p)
+# 
+# 
+# S7 = ValueBasedIS(;vb_params("VB_MIS", MISQ())...)
+# fs7, ws7 = solve(S7, mdp)
+# plot_results(fs7, ws7, label="VB_MIS", p=p)
+# 
+# 
+# S_VB = ValueBasedIS(;vb_params("VB", AQ())...)
+# fs, ws, = solve(S_VB, mdp)
+# 
+# # TODO Things to look into more
+# # The main issue with the value based method is that each policy doesn't want to specialize. Can we combine the actor losses to encourage specialization?
+# # Can we include exploration for the value based method?
+# 
+# 

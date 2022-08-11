@@ -7,8 +7,10 @@ Neps=20000
 
 # Problem setup params
 failure_target=0.7
-mdp = ContinuousBanditMDP(0, 1) #NOTE: To get multimodal behavior, need to modify POMDPGym impl
+mdp = ContinuousBanditMDP(0, 1) #NOTE: To get multimodal behavior, need to modify POMDPGym impl (add a 1- to the reward)
 Px = DistributionPolicy(Normal(0, 0.5))
+
+xi, wi = quadrature_pts(Px.distribution.μ, Px.distribution.σ)
 
 S = state_space(mdp)
 A = action_space(Px)
@@ -70,19 +72,42 @@ vb_params(name, π) = (ΔN=4,
 					  c_opt=(epochs=4,), 
 					  agent_pretrain=pretrain_AQ(mdp, Px, v_target=0.1),
 					  training_buffer_size=5000,
+					  xi, 
+					  wi,
 					  shared_params(name, π)...)
 
 
 ## Policy gradient MIS approach 
-𝒮 = PolicyGradientIS(;pg_params("PG_MIS", MISPolicy([Π(), Π(), Px], [1, 1, 1]))...)
+𝒮 = PolicyGradientIS(;pg_params("PG", Π())...)
+solve(𝒮, mdp)
+plot(-4:0.02:4, (a) -> reward(mdp, [0], a))
+hline!([failure_target])
+a1 = action(𝒮.agent.π, 𝒮.buffer[:s])
+histogram!(a1[:], normalize=true)
+
+
+𝒮 = ValueBasedIS(;vb_params("VB", AQ())...)
+solve(𝒮, mdp)
+plot(-4:0.02:4, (a) -> reward(mdp, [0], a))
+hline!([failure_target])
+plot!(-4:0.02:4, (a) -> value(𝒮.agent.π, [-1.], [a])[1])
+a1 = action(𝒮.agent.π, 𝒮.buffer[:s])
+histogram!(a1[:], normalize=true)
+
+
+𝒮 = PolicyGradientIS(;pg_params("PG_MIS", MISPolicy([Π(), Π(), Π(), Π()], [1/4, 1/4, 1/4, 1/4]))...)
 fs, ws = solve(𝒮, mdp)
 
 plot(-4:0.02:4, (a) -> reward(mdp, [0], a))
 hline!([failure_target])
 a1 = action(𝒮.agent.π.distributions[1], 𝒮.buffer[:s])
 a2 = action(𝒮.agent.π.distributions[2], 𝒮.buffer[:s])
+a3 = action(𝒮.agent.π.distributions[3], 𝒮.buffer[:s])
+a4 = action(𝒮.agent.π.distributions[4], 𝒮.buffer[:s])
 histogram!(a1[:], normalize=true)
 histogram!(a2[:], normalize=true)
+histogram!(a3[:], normalize=true)
+histogram!(a4[:], normalize=true)
 
 ## Policy gradient Mixture approach 
 𝒮 = PolicyGradientIS(;pg_params("PG_mixture", Π_mixture())..., agent_pretrain=nothing)
@@ -96,16 +121,17 @@ histogram!(a1[:], normalize=true)
 histogram!(a2[:], normalize=true)
 
 ## Value based MIS approach
-𝒮 = ValueBasedIS(;vb_params("VB_MIS", MISPolicy([AQ(), AQ(), Px], [1, 1, 1]))..., elite_frac=0.3)
+𝒮 = ValueBasedIS(;vb_params("VB_MIS", MISPolicy([AQ(), AQ()], [0.5, 0.5]))...)
 # 𝒮 = ValueBasedIS(;vb_params("VB", AQ())...)
 fs, ws = solve(𝒮, mdp)
+
 
 plot(-4:0.02:4, (a) -> reward(mdp, [0], a))
 hline!([failure_target])
 plot!(-4:0.02:4, (a) -> value(𝒮.agent.π.distributions[1], [-1.], [a])[1])
 plot!(-4:0.02:4, (a) -> value(𝒮.agent.π.distributions[2], [-1.], [a])[1])
-a1 = action(𝒮.agent.π.distributions[1], zeros(1,1000))
-a2 = action(𝒮.agent.π.distributions[2], zeros(1,1000))
+a1 = action(actor(𝒮.agent.π).distributions[1], zeros(1,1000))
+a2 = action(actor(𝒮.agent.π).distributions[2], zeros(1,1000))
 histogram!(a1[:], normalize=true)
 histogram!(a2[:], normalize=true)
 

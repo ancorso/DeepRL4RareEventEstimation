@@ -1,24 +1,33 @@
-trainable_policies(π::N) where N <: NetworkPolicy = [π]
+trainable_indices(π::N) where N <: NetworkPolicy = [1]
+all_policies(π::N) where N <: NetworkPolicy = [π]
 
 ## Multiple Importance Sampling distribution (Mixed per trajectory)
 mutable struct MISPolicy <: NetworkPolicy
 	distributions
-	Nsamps
+	weights
+	# Nsamps
 	weight_style
-	i
+	# i
 	current_distribution
-	MISPolicy(distributions, Nsamps=ones(length(distributions)); weight_style=:DM, i=0, current_distribution=1) = new(distributions, Nsamps, weight_style, i, current_distribution)
-	MISPolicy(distributions, Nsamps, weight_style, i, current_distribution) = new(distributions, Nsamps, weight_style, i, current_distribution)
+	MISPolicy(distributions, weights=ones(length(distributions)) ./ length(distributions); weight_style=:DM, current_distribution=1) = new(distributions, weights, weight_style, current_distribution)
+	MISPolicy(distributions, weights, weight_style, current_distribution) = new(distributions, weights, weight_style, current_distribution)
 end
 
-function trainable_policies(π::MISPolicy)
-	π.distributions[findall([d isa NetworkPolicy for d in π.distributions])]
+function trainable_indices(π::MISPolicy)
+	findall([d isa NetworkPolicy for d in π.distributions])
 end
+
+function all_policies(π::MISPolicy)
+	π.distributions
+end 
 
 function Crux.new_ep_reset!(π::MISPolicy)
-	π.current_distribution = findfirst(cumsum(π.Nsamps) .>= π.i)
-	π.i = mod1(π.i+1, sum(π.Nsamps))
-    # π.current_net = rand(Categorical(π.weights))
+	# π.current_distribution = findfirst(round.(Int, cumsum(π.Nsamps)) .>= round(Int, π.i))
+	# if isnothing(π.current_distribution)
+	# 	println(π.Nsamps, π.i)
+	# end
+	# π.i = mod1(π.i+1, sum(π.Nsamps))
+    π.current_distribution = rand(Categorical(π.weights))
 end
 
 Flux.@functor MISPolicy
@@ -44,8 +53,9 @@ function Crux.action_space(π::MISPolicy)
 end
 
 function Crux.trajectory_pdf(π::MISPolicy, D...)
-	weights = π.Nsamps ./ sum(π.Nsamps)
+	# weights = π.Nsamps ./ sum(π.Nsamps)
 	pdfs = [trajectory_pdf(d, D...) for d in π.distributions]
 	
-	return sum(weights .* pdfs)
+	return sum(π.weights .* pdfs)
 end
+
