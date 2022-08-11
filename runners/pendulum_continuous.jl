@@ -4,9 +4,9 @@ include("../environments/pendulum_problem.jl")
 
 ## Parameters
 # Experiment params
-Neps=50_0
+Neps=50_000
 Neps_gt=10_000_00
-Ntrials=1
+Ntrials=5
 dir="results/pendulum_continuous/"
 
 # Problem setup params
