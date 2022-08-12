@@ -4,9 +4,9 @@ include("../environments/pendulum_problem.jl")
 
 ## Parameters
 # Experiment params
-Neps=50_0
+Neps=50_000
 Neps_gt=10_000_00
-Ntrials=1
+Ntrials=10
 dir="results/pendulum_continuous/"
 
 # Problem setup params
@@ -47,7 +47,7 @@ end
 
 # Solver parameters
 Nbuff = Neps*Nsteps_per_episode
-Npretrain=1
+Npretrain=100
 shared_params(name, π) = (
 	agent=PolicyParams(;π, pa=Px), 
     N=Neps, 
