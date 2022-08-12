@@ -78,8 +78,8 @@ function ValueBasedIS(;agent::PolicyParams,
 			  priority_fn=Crux.td_error,
 			  train_actor=false,
 			  elite_frac = 0.1,
-			  xi, # quadrature pts
-			  wi, # quadrature weights
+			  xi = nothing, # quadrature pts
+			  wi = nothing, # quadrature weights
 			  f_target,
 			  ΔN,
               a_opt::NamedTuple=(;), 

@@ -155,10 +155,14 @@ function cem_training(𝒮::EvaluationSolver, 𝒟)
 		weights = ((𝒟id[:return] .> 𝒮.𝒫[:f_target_train][id]) .* 𝒟id[:traj_importance_weight])[:]
 		(length(𝒟id) == 0 || sum(weights) == 0) && continue
 		a = π.distribution isa Normal ? 𝒟id[:a][1, :] : 𝒟id[:a]
-		π.distribution = Distributions.fit(typeof(π.distribution), Float64.(a), Float64.(weights))
 		
-		info["μ_$id"] = π.distribution.μ
-		info["sigma_$id"] = π.distribution.σ
+		if π.distribution isa ObjectCategorical
+			π.distribution = Distributions.fit(typeof(π.distribution), Float64.(a), Float64.(weights), objs=π.distribution.objs)
+		else
+			π.distribution = Distributions.fit(typeof(π.distribution), Float64.(a), Float64.(weights))
+			info["μ_$id"] = mean(π.distribution)
+			info["sigma_$id"] = std(π.distribution)
+		end
 	end
 	info
 end
