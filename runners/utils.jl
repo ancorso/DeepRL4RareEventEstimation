@@ -1,4 +1,4 @@
-using POMDPs, Crux, Flux, BSON, CrossEntropyMethod, POMDPTools
+using POMDPs, Crux, Flux, BSON
 
 include("../src/policy_gradient.jl")
 include("../src/value_based.jl")
