@@ -142,7 +142,7 @@ standard_exps = [
 	(()->ValueBasedIS(;vb_params("VB_MIS4_defensive", MISPolicy([AQ(), AQ(), AQ(), AQ(), Px]))...),  "VB_MIS4_defensive")
 ]
 
-Threads.@threads for (𝒮fn, name) in standard_exps; run_experiment(𝒮fn, name); end
+Threads.@threads for (𝒮fn, name) in shuffle(standard_exps); run_experiment(𝒮fn, name); end
 # for (𝒮fn, name) in standard_exps; run_experiment(𝒮fn, name); end
 
 # # TODO Things to look into more
