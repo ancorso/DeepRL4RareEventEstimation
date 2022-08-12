@@ -44,6 +44,31 @@ end
 end
 
 MCSolver(args...; kwargs...) = EvaluationSolver(args...; kwargs...)
+function CEMSolver(; agent, 
+					 ΔN, 
+					 log::NamedTuple=(;), 
+					 required_columns=Symbol[], 
+					 elite_frac=0.1, 
+					 f_target,
+					 buffer_size,
+					 name="cem",
+					 kwargs...)
+					 
+	f_target_train = fill(0f0, length(all_policies(agent.π)))
+	# If MIS, make sure we record an ID. 
+	agent.π isa MISPolicy && push!(required_columns, :id)
+	required_columns = unique([required_columns..., :logprob, :return, :traj_importance_weight])
+	𝒫=(;elite_frac, f_target=[f_target], f_target_train)
+	
+	EvaluationSolver(;agent,
+					  ΔN,
+					  buffer_size, 
+					  required_columns, 
+					  𝒫,
+					  training_type=:cem, 
+					  log=LoggerParams(;dir = "log/$name", log...),
+					  kwargs...)
+end
 
 function gradual_target_increase(𝒮, 𝒟; info)
 	fs = 𝒟[:return][𝒟[:episode_end] .== true][:]
@@ -119,6 +144,23 @@ function assign_mode_ids(𝒮, 𝒟; info=Dict())
 	for i=1:length(mis.weights)
 		info["index$(i)_frac"] = mis.weights[i]
 	end
+end
+
+function cem_training(𝒮::EvaluationSolver, 𝒟)
+	info = Dict()
+	πs = all_policies(𝒮.agent.π)
+	for (id, π) in enumerate(πs)
+		@assert π isa DistributionPolicy
+		𝒟id = haskey(𝒟, :id) ? ExperienceBuffer(minibatch(𝒟, findall(𝒟[:id][:] .== id))) : 𝒟
+		weights = ((𝒟id[:return] .> 𝒮.𝒫[:f_target_train][id]) .* 𝒟id[:traj_importance_weight])[:]
+		(length(𝒟id) == 0 || sum(weights) == 0) && continue
+		a = π.distribution isa Normal ? 𝒟id[:a][1, :] : 𝒟id[:a]
+		π.distribution = Distributions.fit(typeof(π.distribution), Float64.(a), Float64.(weights))
+		
+		info["μ_$id"] = π.distribution.μ
+		info["sigma_$id"] = π.distribution.σ
+	end
+	info
 end
 
 function policy_gradient_training(𝒮::EvaluationSolver, 𝒟)
@@ -244,7 +286,7 @@ function POMDPs.solve(𝒮::EvaluationSolver, mdp)
         # Sample transitions into the batch buffer
 		@assert length(𝒮.buffer) < capacity(𝒮.buffer) # Make sure we never overwrite
 		start_index=length(𝒮.buffer) + 1
-		𝒮.training_type == :policy_gradient && clear!(𝒮.𝒟)
+		𝒮.training_type in [:policy_gradient, :cem] && clear!(𝒮.𝒟)
 		episodes!(s, 𝒮.𝒟, store=𝒮.buffer, Neps=𝒮.ΔN, explore=true, i=𝒮.i, cb=(D) -> 𝒮.post_sample_callback(D, info=info, 𝒮=𝒮))
 		end_index=length(𝒮.buffer)
 		
@@ -296,6 +338,8 @@ function POMDPs.solve(𝒮::EvaluationSolver, mdp)
 	            training_info = policy_gradient_training(𝒮, 𝒮.𝒟)
 	        elseif 𝒮.training_type == :value
 	            training_info = value_training(𝒮, 𝒮.𝒟)
+			elseif 𝒮.training_type == :cem
+				training_info = cem_training(𝒮, 𝒮.𝒟)
 	        else
 	            @error "uncregonized training type: $training_type"
 	        end

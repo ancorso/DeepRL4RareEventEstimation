@@ -1,20 +1,21 @@
 trainable_indices(π::N) where N <: NetworkPolicy = [1]
+trainable_indices(π::N) where N <: DistributionPolicy = [1]
 all_policies(π::N) where N <: NetworkPolicy = [π]
+all_policies(π::N) where N <: DistributionPolicy = [π]
 
 ## Multiple Importance Sampling distribution (Mixed per trajectory)
 mutable struct MISPolicy <: NetworkPolicy
 	distributions
 	weights
-	# Nsamps
+	trainable_indices
 	weight_style
-	# i
 	current_distribution
-	MISPolicy(distributions, weights=ones(length(distributions)) ./ length(distributions); weight_style=:DM, current_distribution=1) = new(distributions, weights, weight_style, current_distribution)
-	MISPolicy(distributions, weights, weight_style, current_distribution) = new(distributions, weights, weight_style, current_distribution)
+	MISPolicy(distributions, weights=ones(length(distributions)) ./ length(distributions); trainable_indices=findall([d isa NetworkPolicy for d in distributions]), weight_style=:DM, current_distribution=1) = new(distributions, weights, trainable_indices, weight_style, current_distribution)
+	MISPolicy(distributions, weights, trainable_indices, weight_style, current_distribution) = new(distributions, weights, trainable_indices, weight_style, current_distribution)
 end
 
 function trainable_indices(π::MISPolicy)
-	findall([d isa NetworkPolicy for d in π.distributions])
+	π.trainable_indices
 end
 
 function all_policies(π::MISPolicy)
