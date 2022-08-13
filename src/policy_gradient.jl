@@ -8,14 +8,20 @@ function pgis_loss(π, 𝒫, 𝒟; info = Dict())
 	
 	# Compute the log probability
 	new_probs = logpdf(π, 𝒟[:s], 𝒟[:a])
+	weight = (𝒟[:return] .> 𝒫[:f_target_train_current][1]) .* 𝒟[:traj_importance_weight] .- b
 	
 	# Log relevant parameters
-	ignore_derivatives() do
+	norm = ignore_derivatives() do
 		info[:kl] = mean(𝒟[:logprob] .- new_probs)
 		info[:mean_baseline] = mean(b)
+		norm = mean(weight)
+		if norm == 0f0
+			norm = 1f0
+		end
+		norm
 	end 
 	
-	-mean(new_probs .* ((𝒟[:return] .> 𝒫[:f_target_train_current][1]) .* 𝒟[:traj_importance_weight] .- b))
+	-mean(new_probs .* weight ./ norm)
 end
 
 function value_loss(π, 𝒫, D; kwargs...)

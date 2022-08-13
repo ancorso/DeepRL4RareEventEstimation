@@ -31,8 +31,8 @@ function gen_topple_mdp(;dt=0.2, failure_thresh=π/4, Nsteps=20, xs=[-1f0, -0.25
    end
    
    # cost environment
-   costfn(m, s, sp) = isterminal(m, sp) ? abs(s[2]) : 0
-   return Px, RMDP(env, policy, costfn, true, dt, maxT, :arg)
+   cost_fn(m, s, sp) = isterminal(m, sp) ? abs(s[2]) : 0
+   return Px, RMDP(env, policy; cost_fn, added_states=:time, dt, maxT)
 end
 
 # Crux.gif(env, simple_policy, "out.gif", max_steps=20, Neps=10)

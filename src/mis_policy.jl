@@ -53,10 +53,8 @@ function Crux.action_space(π::MISPolicy)
 	A1
 end
 
-function Crux.trajectory_pdf(π::MISPolicy, D...)
-	# weights = π.Nsamps ./ sum(π.Nsamps)
-	pdfs = [trajectory_pdf(d, D...) for d in π.distributions]
-	
-	return sum(π.weights .* pdfs)
+function Crux.trajectory_logpdf(π::MISPolicy, D...)
+	logpdfs = [trajectory_logpdf(d, D...) for d in π.distributions]
+	Crux.weighted_logsumexp(logpdfs, π.weights)
 end
 

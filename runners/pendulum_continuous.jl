@@ -3,11 +3,20 @@ include("utils.jl")
 include("../environments/pendulum_problem.jl")
 
 ## Parameters
+test = false
+
 # Experiment params
-Neps=50_000
-Neps_gt=10_000_00
-Ntrials=10
-dir="results/pendulum_continuous/"
+if test
+	Neps=500
+	Ntrials=1
+	Npretrain=1
+else
+	Neps=50_000
+	Neps_gt=1_000_000
+	Ntrials=10
+	Npretrain=100
+end
+dir="results/pendulum_continuous"
 
 # Problem setup params
 failure_target=π/4
@@ -22,7 +31,7 @@ Px, mdp = gen_topple_mdp(px=noise_dist, Nsteps=Nsteps_per_episode, dt=dt, failur
 S = state_space(mdp)
 A = action_space(Px)
 
-# Networks
+## Networks
 function net(out_act...; Nin=3, Nout=1, Nhiddens=[32, 32])
     hiddens = [Dense(Nhiddens[idx], Nhiddens[idx+1], relu) for idx in 1:length(Nhiddens)-1]
     Chain(Dense(Nin, Nhiddens[begin], relu), hiddens..., Dense(Nhiddens[end], Nout, out_act...)) # Basic architecture
@@ -37,17 +46,16 @@ end
 AC(A=Π()) = ActorCritic(A, V()) # Actor-crtic for baseline approaches
 QSA() = ContinuousNetwork(net(sigmoid, Nin=4)) # Q network for value-based
 AQ(A=Π()) = ActorCritic(A, QSA()) # Actor-critic for continuous value-based approach
-function Π_CEM(Npolicies; dμ = Distributions.Uniform(-0.2, 0.2))
+function Π_CEM(Npolicies; d=()->Normal(rand(Distributions.Uniform(-0.2, 0.2)), 0.3))
 	if Npolicies == 1
-		return DistributionPolicy(Normal(rand(dμ), 0.3))
+		return DistributionPolicy(d())
 	else
-		return MISPolicy([DistributionPolicy(Normal(rand(dμ), 0.3)) for _ in 1:Npolicies])
+		return MISPolicy([DistributionPolicy(d()) for _ in 1:Npolicies], trainable_indices=collect(1:Npolicies))
 	end
 end
 
-# Solver parameters
+## Algorithm parameter setup
 Nbuff = Neps*Nsteps_per_episode
-Npretrain=100
 shared_params(name, π) = (
 	agent=PolicyParams(;π, pa=Px), 
     N=Neps, 
@@ -74,6 +82,7 @@ cem_params(name, π) = (
 pg_params(name, π; use_baseline=false, kwargs...) = (
 	ΔN=200, 
 	use_baseline,
+	a_opt=(;optimizer=Flux.Optimiser(Flux.ClipValue(1f0), Adam(3f-4)), batch_size=1024),
 	c_opt=(;max_batches=200, batch_size=1024),
 	training_buffer_size=200*Nsteps_per_episode,
 	agent_pretrain=use_baseline ? pretrain_AV(mdp, Px, v_target=0.1, Nepochs=Npretrain) : pretrain_policy(mdp, Px, Nepochs=Npretrain),
@@ -85,7 +94,8 @@ vb_params(name, π; kwargs...) = (
 	ΔN=20,
 	train_actor=true,
 	training_buffer_size=3200*Nsteps_per_episode,
-	c_opt=(epochs=20,), 
+	a_opt=(optimizer=Flux.Optimiser(Flux.ClipValue(1f0), Adam(3f-4)), batch_size=1024),
+	c_opt=(epochs=20, batch_size=1024, optimizer=Flux.Optimiser(Flux.ClipValue(1f0), Adam(3f-4))), 
 	agent_pretrain=pretrain_AQ(mdp, Px, v_target=0.1, Nepochs=Npretrain),
 	xi,
 	wi,
@@ -142,9 +152,19 @@ standard_exps = [
 	(()->ValueBasedIS(;vb_params("VB_MIS4_defensive", MISPolicy([AQ(), AQ(), AQ(), AQ(), Px]))...),  "VB_MIS4_defensive")
 ]
 
-Threads.@threads for (𝒮fn, name) in shuffle(standard_exps); run_experiment(𝒮fn, name); end
-# for (𝒮fn, name) in standard_exps; run_experiment(𝒮fn, name); end
+if test
+	for (𝒮fn, name) in standard_exps; run_experiment(𝒮fn, name); end
+else
+	Threads.@threads for (𝒮fn, name) in shuffle(standard_exps); run_experiment(𝒮fn, name); end
+end
 
 # # TODO Things to look into more
 # # The main issue with the value based method is that each policy doesn't want to specialize. Can we combine the actor losses to encourage specialization?
 # # Can we include exploration for the value based method?
+
+## Quick test:
+# 𝒮 = PolicyGradientIS(;pg_params("PG", Π())...)
+# fs, ws = solve(𝒮, mdp)
+# plot(1:Neps, x->gt, linestyle=:dash, color=:black, ylims=(0,0.0001))
+# plot!(cumsum(fs .* ws) ./ (1:length(ws)))
+

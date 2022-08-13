@@ -2,12 +2,12 @@ using Parameters, Random
 import Zygote: ignore_derivatives
 
 function safe_weight_fn(agent, data, ep)
-	p = trajectory_pdf(agent.pa, data, ep)
-	q = trajectory_pdf(agent.π, data, ep)
-	if q == 0
+	logp = trajectory_logpdf(agent.pa, data, ep)
+	logq = trajectory_logpdf(agent.π, data, ep)
+	if logq == -Inf
 		return 0f0
 	else
-		return p/q
+		return exp(logp - logq)
 	end	
 end
 
@@ -105,6 +105,7 @@ function assign_mode_ids(𝒮, 𝒟; info=Dict())
 	mis = 𝒮.agent.π
 	
 	weights = mis.weights
+	logweights = log.(weights)
 	new_weights = zeros(Float32, length(weights)) # new set of weights
 	
 	eps = episodes(𝒟)
@@ -113,7 +114,7 @@ function assign_mode_ids(𝒮, 𝒟; info=Dict())
 		# update the failure mode id of each sample (this might change over time as well)
 		
 		# Get the likelihood that the sample "ep" comes from each policy
-		pw = [trajectory_pdf(d, 𝒟, ep) for d in πs].* weights # likelihood times weight
+		pw = [trajectory_logpdf(d, 𝒟, ep) for d in πs] .+ logweights # likelihood times weight
 		# γ = sum(pw) == 0 ? weights : pw ./ sum(pw) # normalize (safely)
 		id = argmax(pw)
 		𝒟[:id][1, ep] .= id
@@ -160,8 +161,6 @@ function cem_training(𝒮::EvaluationSolver, 𝒟)
 			π.distribution = Distributions.fit(typeof(π.distribution), Float64.(a), Float64.(weights), objs=π.distribution.objs)
 		else
 			π.distribution = Distributions.fit(typeof(π.distribution), Float64.(a), Float64.(weights))
-			info["μ_$id"] = mean(π.distribution)
-			info["sigma_$id"] = std(π.distribution)
 		end
 	end
 	info
