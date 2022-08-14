@@ -109,8 +109,6 @@ vb_params(name, π; kwargs...) = (
 	training_buffer_size=3200*Nsteps_per_episode,
 	c_opt=(epochs=20,), 
 	agent_pretrain=pretrain_AQ(mdp, Px, v_target=0.1, Nepochs=Npretrain),
-	xi,
-	wi,
 	shared_params(name, π)...,
 	kwargs...
 )

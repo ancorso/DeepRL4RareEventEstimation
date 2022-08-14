@@ -73,7 +73,7 @@ cem_params(name, π) = (
 pg_params(name, π; use_baseline=false, kwargs...) = (
 	ΔN=200, 
 	use_baseline,
-	a_opt=(;optimizer=Flux.Optimiser(Flux.ClipValue(1f0), Adam(3f-4)), batch_size=1024),
+	a_opt=(;optimizer=Flux.Optimiser(Flux.ClipValue(1f0), Adam(3f-4)), batch_size=200*Nsteps_per_episode),
 	c_opt=(;max_batches=200, batch_size=1024),
 	training_buffer_size=200*Nsteps_per_episode,
 	agent_pretrain=use_baseline ? pretrain_AV(mdp, Px, v_target=0.1, Nepochs=Npretrain) : pretrain_policy(mdp, Px, Nepochs=Npretrain),

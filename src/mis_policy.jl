@@ -49,7 +49,7 @@ Crux.exploration(π::MISPolicy, s; kwargs...) = exploration(π.distributions[π.
 
 function Crux.action_space(π::MISPolicy)
 	A1 = action_space(π.distributions[1])
-	@assert all(action_space.(π.distributions) .== [A1])
+	# @assert all(action_space.(π.distributions) .== [A1])
 	A1
 end
 

@@ -287,7 +287,7 @@ function POMDPs.solve(𝒮::EvaluationSolver, mdp)
         info = Dict()
         
         # Sample transitions into the batch buffer
-		@assert length(𝒮.buffer) < capacity(𝒮.buffer) # Make sure we never overwrite
+		@assert length(𝒮.buffer) < Crux.capacity(𝒮.buffer) # Make sure we never overwrite
 		start_index=length(𝒮.buffer) + 1
 		𝒮.training_type in [:policy_gradient, :cem] && clear!(𝒮.𝒟)
 		episodes!(s, 𝒮.𝒟, store=𝒮.buffer, Neps=𝒮.ΔN, explore=true, i=𝒮.i, cb=(D) -> 𝒮.post_sample_callback(D, info=info, 𝒮=𝒮))

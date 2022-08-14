@@ -22,21 +22,21 @@ end
 
 # Estimate the value function for a Continuous network
 function value_estimate(π::ActorCritic, s, 𝒫)
-	# samps = []
-	# for i=1:𝒫[:N_samples]
-	# 	anom, _ = exploration(𝒫[:px], s)
-	# 	# a, logqa = exploration(π, s)
-	# 	# w = exp.(logpdf(𝒫[:px], s, a) .- logqa)
-	# 	# push!(samps, value(π, s, a) .* w)
-	# 	push!(samps, value(π, s, anom))
-	# end
-	# return mean(samps)
 	samps = []
-	for a in 𝒫[:xi]
-		push!(samps, value(π, s, repeat(a, 1, size(s)[end])))
+	for i=1:10
+		anom, _ = exploration(𝒫[:px], s)
+		# a, logqa = exploration(π, s)
+		# w = exp.(logpdf(𝒫[:px], s, a) .- logqa)
+		# push!(samps, value(π, s, a) .* w)
+		push!(samps, value(π, s, anom))
 	end
-	
-	return sum(𝒫[:wi] .* samps)
+	return mean(samps)
+	# samps = []
+	# for a in 𝒫[:xi]
+	# 	push!(samps, value(π, s, repeat(a, 1, size(s)[end])))
+	# end
+	# 
+	# return sum(𝒫[:wi] .* samps)
 end
 
 function Ef_target(π, 𝒫, 𝒟; kwargs...)

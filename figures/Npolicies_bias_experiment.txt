@@ -1,0 +1,10 @@
+\toprule
+ & \multicolumn{2}{c}{\textbf{Pendulum (Discrete)}} & \multicolumn{2}{c}{\textbf{Pendulum (Continuous)}}\\ 
+\midrule
+\textbf{Method} & \textbf{$M=1$} & \textbf{$M=2$} & \textbf{$M=4$} & \textbf{$M=1$} & \textbf{$M=2$} & \textbf{$M=4$}\\
+\midrule
+MC & $-0.05 \pm 0.62$ & $-0.05 \pm 0.62$ & $-0.05 \pm 0.62$ & $0.02 \pm 1.44$ & $0.02 \pm 1.44$ & $0.02 \pm 1.44$\\ 
+CEM & $-0.63 \pm 0.18$ & $-0.52 \pm 0.23$ & $-0.50 \pm 0.29$ & $-0.48 \pm 0.16$ & $-0.31 \pm 0.31$ & $-0.25 \pm 0.26$\\ 
+PG & $0.08 \pm 0.36$ & $0.12 \pm 0.11$ & $0.16 \pm 0.13$ & $-0.43 \pm 0.17$ & $-0.12 \pm 0.05$ & $-0.12 \pm 0.13$\\ 
+VB & $-0.21 \pm 0.55$ & $-0.03 \pm 0.54$ & $0.23 \pm 0.58$ & $-0.82 \pm 0.17$ & $-0.53 \pm 0.57$ & $-0.43 \pm 0.20$\\ 
+\bottomrule
