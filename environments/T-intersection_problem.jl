@@ -119,6 +119,7 @@ function POMDPs.isterminal(mdp::MDP{Scene, A}, s::Scene) where A
 end
 
 function gen_T_intersection_problem()
+    Random.seed!(0)
     ## Construct the MDP
     sut_agent = BlinkerVehicleAgent(get_ped_vehicle(id=1, s=0., v=0.), TIDM(ped_TIDM_template, noisy_observations = true))
     adv_ped = NoisyPedestrianAgent(get_pedestrian(id=2, s=0., v=0.), AdversarialPedestrian())
