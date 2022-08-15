@@ -105,7 +105,26 @@ function POMDPTools.render(mdp::MDP{Scene, A}, s, args...) where {A}
 end
 
 function POMDPs.initialstate(mdp::MDP{Scene, A}, rng::AbstractRNG = Random.GLOBAL_RNG) where A
-    return GOOD_INITIAL_STATES
+    # return GOOD_INITIAL_STATES
+    
+    # Generate challengin scenario
+    veh_target = 18.
+    veh_start = 0.
+    
+    ped_target = 8.
+
+
+    collision_time = 2.
+    
+    veh_v = 8. #(veh_target - veh_start) / (collision_time)
+    ped_v = 1.5
+
+    ped_s = 5. #ped_target - ped_v*collision_time
+    
+    veh_s = veh_start # vehicle is slowing down
+    
+    s = Scene([ez_pedestrian(;id=2, s=ped_s, v=ped_v), ez_ped_vehicle(;id=1, s=veh_s, v=veh_v)])
+    ImplicitDistribution((rng)->s)
 end
 
 function POMDPs.reward(mdp::AdversarialDrivingMDP, s::Scene, a::Vector{Disturbance}, sp::Scene)
@@ -124,8 +143,9 @@ function gen_T_intersection_problem()
     sut_agent = BlinkerVehicleAgent(get_ped_vehicle(id=1, s=0., v=0.), TIDM(ped_TIDM_template, noisy_observations = true))
     adv_ped = NoisyPedestrianAgent(get_pedestrian(id=2, s=0., v=0.), AdversarialPedestrian())
     mdp = AdversarialDrivingMDP(sut_agent, [adv_ped], ped_roadway, 0.2)
+    mdp.agents[end].model.idm.v_des=10
     
-    gen_good_initialstates(mdp, 1000)
+    # gen_good_initialstates(mdp, 1000)
 
     as = [AdvDrivingAction(a) for a in actions(mdp)]
     ps = [exp(logpdf(mdp, a)) for a in actions(mdp)]

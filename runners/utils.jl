@@ -106,10 +106,10 @@ function experiment_setup(;mdp, Ntrials, dir, plot_init=()->plot(), gt=nothing)
 		if successes > 0 && !isnothing(name)
 			BSON.@save "$dir/$name.bson" data
 			Neps = length(data[:fs][1])
-			# plot_init()
-			# plot!(1:Neps, mean(data[:est]), ribbon=std(data[:est]), label=name)
+			plot_init()
+			plot!(1:Neps, mean(data[:est]), ribbon=std(data[:est]), label=name)
 			
-			# savefig("$dir/$name.png")
+			savefig("$dir/$name.png")
 		end
 		return data
 	end

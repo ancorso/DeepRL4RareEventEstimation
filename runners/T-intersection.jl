@@ -3,7 +3,7 @@ include("utils.jl")
 include("../environments/T-intersection_problem.jl")
 
 ## false
-test = true
+test = false
 
 # Experiment params
 if test
@@ -23,17 +23,17 @@ dir="results/t_intersection"
 failure_target = 0.99f0
 Px, mdp = gen_T_intersection_problem()
 
-# Crux.gif(mdp, Px, "out.gif", Neps=10)
+Crux.gif(mdp, Px, "out.gif", Neps=1)
 
-# D = episodes!(Sampler(mdp, Px, max_steps=100), Neps=1000)
-# vals = D[:r][:][D[:done][:] .== 1]
-# histogram(vals, label="Pendulum Topple", xlabel="Return", ylabel="Count", title="Distribution of Returns")
-# sum(vals .>= 1f0)
+D = episodes!(Sampler(mdp, Px, max_steps=100), Neps=50000)
+vals = D[:r][:][D[:done][:] .== 1]
+histogram(vals, label="Pendulum Topple", xlabel="Return", ylabel="Count", title="Distribution of Returns")
+sum(vals .>= 1f0)
 
 
-S = state_space(mdp, μ=Float32[0.22, 25.0, -1, 1.5, 1.0, 16.0, 5.5, 1.0, 0.0], σ=Float32[.15f0, .56, 3.0, 0.2, 0.3, 7, 6, 1f0, 1f0])
+S = state_space(mdp, μ=Float32[0.22, 25.0, -5, 1.5, 1.0, 16.0, 14.5, 1.0, 0.0], σ=Float32[.15f0, .56, 3.0, 0.2, 0.3, 7, 6, 1f0, 1f0])
 A = action_space(Px)
-Nsteps_per_episode=30
+Nsteps_per_episode=40
 
 ## Networks
 function net(out_act...; Nin=S.dims[1], Nout=1, Nhiddens=[64, 32], act=tanh)
@@ -113,20 +113,21 @@ vb_params(name, π; kwargs...) = (
 					  
 
 ## Get the ground truth comparison
-# data = experiment_setup(;mdp, Ntrials=1, dir)(()->MCSolver(;mc_params(Neps_gt)...), "gt")
-# gt = mean(data[:est])[end]
-# gt_std = std(data[:est])[end]
+data = experiment_setup(;mdp, Ntrials=5, dir)(()->MCSolver(;mc_params(Neps_gt)...), "gt")
+gt = mean(data[:est])[end]
+gt_std = std(data[:est])[end]
 
 # Ground truth experiment
-# D = episodes!(Sampler(mdp, Px), Neps=Neps_gt)
-# vals = D[:r][:][D[:done][:] .== 1]
-# # histogram(vals, label="Pendulum Topple", xlabel="Return", ylabel="Count", title="Distribution of Returns")
-# gt = sum(D[:r] .> failure_target) / sum(D[:done][:] .== 1)
-# io = open("gt_tintersection.txt", "w")
-# write(io, string(gt))
-# close(io)
+Neps_gt
+D = episodes!(Sampler(mdp, Px), Neps=Neps_gt)
+vals = D[:r][:][D[:done][:] .== 1]
+# histogram(vals, label="Pendulum Topple", xlabel="Return", ylabel="Count", title="Distribution of Returns")
+gt = sum(D[:r] .> failure_target) / sum(D[:done][:] .== 1)
+io = open("gt_tintersection.txt", "w")
+write(io, string(gt))
+close(io)
 
-gt = 2.5333333333333334e-5
+gt = 6.8f-5
 # gt_std = 4.163331998932266e-6
 plot_init = ()->plot(1:Neps, x->gt, linestyle=:dash, color=:black, ylims=(0,0.0001))
 
@@ -159,21 +160,25 @@ standard_exps = [
 	(()->ValueBasedIS(;vb_params("VB_MIS2_defensive", MISPolicy([AQ(), AQ(), Px]))...),  "VB_MIS2_defensive"),
 ]
 
-if test
-	for (𝒮fn, name) in standard_exps; run_experiment(𝒮fn, name); end
-else
-	Threads.@threads for (𝒮fn, name) in shuffle(standard_exps); run_experiment(𝒮fn, name); end
-end
+# if test
+for (𝒮fn, name) in standard_exps; run_experiment(𝒮fn, name); end
+# else
+# 	Threads.@threads for (𝒮fn, name) in shuffle(standard_exps); run_experiment(𝒮fn, name); end
+# end
 
 ## Quick test:
-# 𝒮 = MCSolver(;mc_params()...)
-# 𝒮 = CEMSolver(;cem_params("CEM_1", Π_CEM(1))...)
+𝒮 = MCSolver(;mc_params()...)
+𝒮 = CEMSolver(;cem_params("CEM_1", Π_CEM(1))...)
 # 𝒮 = CEMSolver(;cem_params("CEM_2", Π_CEM(2))...)
 # 𝒮 = PolicyGradientIS(;pg_params("PG", Π())...)
-# 𝒮 = PolicyGradientIS(;pg_params("PG_MIS2", MISPolicy([Π(), Π()]))...)
+𝒮 = PolicyGradientIS(;pg_params("PG_MIS2_defense", MISPolicy([Π(), Π()]))...)
 # 𝒮 = ValueBasedIS(;vb_params("VB", AQ())...)
 # 
-# fs, ws = solve(𝒮, mdp)
-# plot(1:Neps, x->gt, linestyle=:dash, color=:black, ylims=(0,0.0001))
-# plot!(cumsum(fs .* ws) ./ (1:length(ws)))
+fs, ws = solve(𝒮, mdp)
+
+sum(fs)
+
+plot(1:Neps, x->gt, linestyle=:dash, color=:black, ylims=(0,0.0001))
+plot(cumsum(fs .* ws) ./ (1:length(ws)))
+
 

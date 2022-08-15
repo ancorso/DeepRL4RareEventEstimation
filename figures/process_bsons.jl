@@ -1,4 +1,4 @@
-using Printf
+using Printf, BSON, Plots, Distributions
 
 function convergence_plot(filepath, gt, Nsamps)
 	data = BSON.load(filepath)[:data]
@@ -8,11 +8,25 @@ function convergence_plot(filepath, gt, Nsamps)
 	plot!(1:Nsamps, mean(data[:est]), ribbon=std(data[:est]))
 end
 
+function failures_found(filepath, gt, Nsamps)
+	data = BSON.load(filepath)[:data]
+	Ntrial = length(data[:est])
+
+	# p = plot(1:Nsamps, x->gt, linestyle=:dash, color=:black, ylims=(0,gt*5))
+	p=plot()
+	for i=1:Ntrial
+		plot!(1:Nsamps, cumsum(data[:fs][i]))
+	end
+	p
+end
+
+
 function abs_rel_err(filepath, gt, Nsamps)
 	data = BSON.load(filepath)[:data]
 	Ntrial = length(data[:est])
 	
-	rel_errs = [(data[:est][i][Nsamps] - gt)/gt for i=1:Ntrial]
+	vals  = [data[:est][i][Nsamps] for i=1:Ntrial]
+	rel_errs = [(v - gt)/gt for v in vals[isfinite.(vals)]]
 	
 	mean_abs_rel_err = mean(abs.(rel_errs))
 	std_abs_rel_err = std(abs.(rel_errs))
@@ -23,7 +37,8 @@ function rel_err(filepath, gt, Nsamps)
 	data = BSON.load(filepath)[:data]
 	Ntrial = length(data[:est])
 	
-	rel_errs = [(data[:est][i][Nsamps] - gt)/gt for i=1:Ntrial]
+	vals  = [data[:est][i][Nsamps] for i=1:Ntrial]
+	rel_errs = [(v - gt)/gt for v in vals[isfinite.(vals)]]
 	
 	mean_rel_err = mean(rel_errs)
 	std_rel_err = std(rel_errs)
@@ -31,8 +46,8 @@ function rel_err(filepath, gt, Nsamps)
 end
 
 environments = [
-	("\\multicolumn{2}{c}{\\textbf{Pendulum (Discrete)}}", "external_results/updated/pendulum_discrete/", 50000, 2.5333333333333334e-5),
-	("\\multicolumn{2}{c}{\\textbf{Pendulum (Continuous)}}", "external_results/updated/pendulum_continuous/", 50000, 1.96f-5),
+	("\\multicolumn{2}{c}{\\textbf{Pendulum (Discrete)}}", "external_results/pendulum_discrete/", 50000, 2.5333333333333334e-5),
+	("\\multicolumn{2}{c}{\\textbf{Pendulum (Continuous)}}", "external_results/pendulum_continuous/", 50000, 1.96f-5),
 ]
 
 
@@ -102,7 +117,7 @@ function gen_figures_and_tables(environments, experiments, metrics, subheaders, 
 		for (name, dir, Nsamps, gt) in environments
 			for f in files
 				path = string(dir, f)
-				push!(plots, convergence_plot(path, gt, Nsamps))
+				# push!(plots, convergence_plot(path, gt, Nsamps))
 				plotcolumns += 1
 				for m in metrics
 					write(io, string(" & ", m(path, gt, Nsamps)))
@@ -113,7 +128,7 @@ function gen_figures_and_tables(environments, experiments, metrics, subheaders, 
 	end
 	write(io, "\\bottomrule\n")
 	close(io)
-	plot(plots..., layout=(plotrows, plotcolumns), size=(300, 200).*((plotcolumns, plotrows)))
+	# plot(plots..., layout=(plotrows, plotcolumns), size=(300, 200).*((plotcolumns, plotrows)))
 end
 
 gen_figures_and_tables(environments, pretrain_experiment, [abs_rel_err], pretrain_subheaders, "pretrain_experiment.txt")

@@ -129,13 +129,13 @@ function assign_mode_ids(𝒮, 𝒟; info=Dict())
 	if sum(new_weights) > 0
 		# Set a minimum fraction for each distribution
 		new_weights =  (new_weights ./ sum(new_weights)) .+ 0.1
-		
+	
 		# Compute the target weight values
 		new_weights = new_weights ./ sum(new_weights)
-		
+	
 		# Perform a moving average update
 		mis.weights += 0.05*(new_weights .- mis.weights)
-		
+	
 		# Normalize to make sure the total samples is always equal to the 
 		mis.weights = mis.weights ./ sum(mis.weights)
 	end
@@ -309,32 +309,32 @@ function POMDPs.solve(𝒮::EvaluationSolver, mdp)
 	        gradual_target_increase(𝒮, 𝒮.𝒟; info)
 			
 			# Plot training frames
-			# try
-			# 	if mod(𝒮.i, 100) == 0
-			# 		function plot_traj(π; label, p=plot())
-			# 			D = episodes!(Sampler(mdp, π), Neps=10)
-			# 			scatter!(p, D[:s][1, :], D[:s][2, :], label=label)
-			# 		end
-			# 		ps = []
-			# 
-			# 		for (i,π) in enumerate(all_policies(𝒮.agent.π))
-			# 			if π isa ActorCritic
-			# 				if 𝒮.training_type == :policy_gradient
-			# 					p = heatmap(0:0.1:2, -1.2:0.1:1.2, (t,θ) -> value(π, [t, θ, 0f0])[1], clims=(0,1))
-			# 				else
-			# 					p = heatmap(0:0.1:2, -1.2:0.1:1.2, (t,θ) -> value(π, [t, θ, 0f0, 0f0])[1], clims=(0,1))
-			# 				end
-			# 			else 
-			# 				p = plot(ylims=(-1.2,1.2))
-			# 			end
-			# 			plot_traj(π, label="q$i", p=p)
-			# 			push!(ps, p)
-			# 		end
-			# 
-			# 		p=plot(ps..., layout=(length(ps), 1), size=(600, 200*length(ps)))
-			# 		savefig(p, "frames/frame$(𝒮.i).png")
-			# 	end
-			# catch end
+			try
+				if mod(𝒮.i, 100) == 0
+					function plot_traj(π; label, p=plot())
+						D = episodes!(Sampler(mdp, π), Neps=10)
+						scatter!(p, D[:s][1, :], D[:s][2, :], label=label)
+					end
+					ps = []
+			
+					for (i,π) in enumerate(all_policies(𝒮.agent.π))
+						if π isa ActorCritic
+							if 𝒮.training_type == :policy_gradient
+								p = heatmap(0:0.1:2, -1.2:0.1:1.2, (t,θ) -> value(π, [t, θ, 0f0])[1], clims=(0,1))
+							else
+								p = heatmap(0:0.1:2, -1.2:0.1:1.2, (t,θ) -> value(π, [t, θ, 0f0, 0f0])[1], clims=(0,1))
+							end
+						else 
+							p = plot(ylims=(-1.2,1.2))
+						end
+						plot_traj(π, label="q$i", p=p)
+						push!(ps, p)
+					end
+			
+					p=plot(ps..., layout=(length(ps), 1), size=(600, 200*length(ps)))
+					savefig(p, "frames/frame$(𝒮.i).png")
+				end
+			catch end
 			
 	        # Train the networks
 	        if 𝒮.training_type == :policy_gradient

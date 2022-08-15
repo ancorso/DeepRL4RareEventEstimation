@@ -1,0 +1,542 @@
+% Recommended preamble:
+% \usetikzlibrary{arrows.meta}
+% \usetikzlibrary{backgrounds}
+% \usepgfplotslibrary{patchplots}
+% \usepgfplotslibrary{fillbetween}
+% \pgfplotsset{%
+%     layers/standard/.define layer set={%
+%         background,axis background,axis grid,axis ticks,axis lines,axis tick labels,pre main,main,axis descriptions,axis foreground%
+%     }{
+%         grid style={/pgfplots/on layer=axis grid},%
+%         tick style={/pgfplots/on layer=axis ticks},%
+%         axis line style={/pgfplots/on layer=axis lines},%
+%         label style={/pgfplots/on layer=axis descriptions},%
+%         legend style={/pgfplots/on layer=axis descriptions},%
+%         title style={/pgfplots/on layer=axis descriptions},%
+%         colorbar style={/pgfplots/on layer=axis descriptions},%
+%         ticklabel style={/pgfplots/on layer=axis tick labels},%
+%         axis background@ style={/pgfplots/on layer=axis background},%
+%         3d box foreground style={/pgfplots/on layer=axis foreground},%
+%     },
+% }
+
+\begin{tikzpicture}[/tikz/background rectangle/.style={fill={rgb,1:red,1.0;green,1.0;blue,1.0}, draw opacity={1.0}}, show background rectangle]
+\begin{axis}[point meta max={nan}, point meta min={nan}, legend cell align={left}, legend columns={1}, title={}, title style={at={{(0.5,1)}}, anchor={south}, font={{\fontsize{14 pt}{18.2 pt}\selectfont}}, color={rgb,1:red,0.0;green,0.0;blue,0.0}, draw opacity={1.0}, rotate={0.0}}, legend style={color={rgb,1:red,0.0;green,0.0;blue,0.0}, draw opacity={1.0}, line width={1}, solid, fill={rgb,1:red,1.0;green,1.0;blue,1.0}, fill opacity={1.0}, text opacity={1.0}, font={{\fontsize{8 pt}{10.4 pt}\selectfont}}, text={rgb,1:red,0.0;green,0.0;blue,0.0}, cells={anchor={center}}, at={(0.02, 0.98)}, anchor={north west}}, axis background/.style={fill={rgb,1:red,1.0;green,1.0;blue,1.0}, opacity={1.0}}, anchor={north west}, xshift={1.0mm}, yshift={-1.0mm}, width={150.4mm}, height={99.6mm}, scaled x ticks={false}, xlabel={Time}, x tick style={color={rgb,1:red,0.0;green,0.0;blue,0.0}, opacity={1.0}}, x tick label style={color={rgb,1:red,0.0;green,0.0;blue,0.0}, opacity={1.0}, rotate={0}}, xlabel style={at={(ticklabel cs:0.5)}, anchor=near ticklabel, at={{(ticklabel cs:0.5)}}, anchor={near ticklabel}, font={{\fontsize{11 pt}{14.3 pt}\selectfont}}, color={rgb,1:red,0.0;green,0.0;blue,0.0}, draw opacity={1.0}, rotate={0.0}}, xmajorgrids={true}, xmin={0}, xmax={2}, xticklabels={{$0$,$1$,$2$}}, xtick={{0.0,1.0,2.0}}, xtick align={inside}, xticklabel style={font={{\fontsize{8 pt}{10.4 pt}\selectfont}}, color={rgb,1:red,0.0;green,0.0;blue,0.0}, draw opacity={1.0}, rotate={0.0}}, x grid style={color={rgb,1:red,0.0;green,0.0;blue,0.0}, draw opacity={0.1}, line width={0.5}, solid}, axis x line*={left}, x axis line style={color={rgb,1:red,0.0;green,0.0;blue,0.0}, draw opacity={1.0}, line width={1}, solid}, scaled y ticks={false}, ylabel={Angle}, y tick style={color={rgb,1:red,0.0;green,0.0;blue,0.0}, opacity={1.0}}, y tick label style={color={rgb,1:red,0.0;green,0.0;blue,0.0}, opacity={1.0}, rotate={0}}, ylabel style={at={(ticklabel cs:0.5)}, anchor=near ticklabel, at={{(ticklabel cs:0.5)}}, anchor={near ticklabel}, font={{\fontsize{11 pt}{14.3 pt}\selectfont}}, color={rgb,1:red,0.0;green,0.0;blue,0.0}, draw opacity={1.0}, rotate={0.0}}, ymajorgrids={true}, ymin={-1}, ymax={1}, yticklabels={{$-1$,$0$,$1$}}, ytick={{-1.0,0.0,1.0}}, ytick align={inside}, yticklabel style={font={{\fontsize{8 pt}{10.4 pt}\selectfont}}, color={rgb,1:red,0.0;green,0.0;blue,0.0}, draw opacity={1.0}, rotate={0.0}}, y grid style={color={rgb,1:red,0.0;green,0.0;blue,0.0}, draw opacity={0.1}, line width={0.5}, solid}, axis y line*={left}, y axis line style={color={rgb,1:red,0.0;green,0.0;blue,0.0}, draw opacity={1.0}, line width={1}, solid}, colorbar={false}]
+    \addplot[color={rgb,1:red,0.0;green,0.0;blue,0.0}, name path={935785e3-502a-4bef-951f-38f56b7ae161}, draw opacity={1.0}, line width={1}, dashed]
+        table[row sep={\\}]
+        {
+            \\
+            -2.0  0.7853981633974483  \\
+            4.0  0.7853981633974483  \\
+        }
+        ;
+    \addlegendentry {Failure Threshold}
+    \addplot[color={rgb,1:red,0.0;green,0.0;blue,0.0}, name path={935785e3-502a-4bef-951f-38f56b7ae161}, draw opacity={1.0}, line width={1}, dashed, forget plot]
+        table[row sep={\\}]
+        {
+            \\
+            -2.0  -0.7853981633974483  \\
+            4.0  -0.7853981633974483  \\
+        }
+        ;
+    \addplot[color={rgb,1:red,0.851;green,0.373;blue,0.008}, name path={8eac101b-2579-4e52-95f5-558e6aa0304f}, draw opacity={0.3}, line width={1}, solid]
+        table[row sep={\\}]
+        {
+            \\
+            0.0  -0.15212542  \\
+            0.1  -0.13594848  \\
+            0.2  -0.13872762  \\
+            0.3  -0.15620488  \\
+            0.4  -0.18699415  \\
+            0.5  -0.217758  \\
+            0.6  -0.24562877  \\
+            0.7  -0.28217018  \\
+            0.8  -0.31163427  \\
+            0.9  -0.33705047  \\
+            1.0  -0.36073852  \\
+            1.1  -0.39211977  \\
+            1.2  -0.4394264  \\
+            1.3  -0.49644774  \\
+            1.4  -0.57889456  \\
+            1.5  -0.6905927  \\
+            1.6  -0.8238568  \\
+        }
+        ;
+    \addlegendentry {$q_1$}
+    \addplot[color={rgb,1:red,0.851;green,0.373;blue,0.008}, name path={cce23ceb-3ff6-4267-8df5-3d4cdb9f8723}, draw opacity={0.3}, line width={1}, solid, forget plot]
+        table[row sep={\\}]
+        {
+            \\
+            0.0  0.005501171  \\
+            0.1  -0.011476566  \\
+            0.2  -0.036144186  \\
+            0.3  -0.06364448  \\
+            0.4  -0.111708  \\
+            0.5  -0.1484947  \\
+            0.6  -0.19024919  \\
+            0.7  -0.23097059  \\
+            0.8  -0.27022648  \\
+            0.9  -0.2964004  \\
+            1.0  -0.32637662  \\
+            1.1  -0.36907756  \\
+            1.2  -0.4145813  \\
+            1.3  -0.47497806  \\
+            1.4  -0.53787947  \\
+            1.5  -0.62161326  \\
+            1.6  -0.71777385  \\
+            1.7  -0.85081995  \\
+        }
+        ;
+    \addplot[color={rgb,1:red,0.851;green,0.373;blue,0.008}, name path={c495c087-64ff-4e92-aba1-f67e8af11657}, draw opacity={0.3}, line width={1}, solid, forget plot]
+        table[row sep={\\}]
+        {
+            \\
+            0.0  -0.042337023  \\
+            0.1  -0.028853472  \\
+            0.2  -0.01266051  \\
+            0.3  -0.01657146  \\
+            0.4  -0.032294046  \\
+            0.5  -0.060644627  \\
+            0.6  -0.08656741  \\
+            0.7  -0.13021708  \\
+            0.8  -0.1701251  \\
+            0.9  -0.20121878  \\
+            1.0  -0.23710623  \\
+            1.1  -0.27363372  \\
+            1.2  -0.31588522  \\
+            1.3  -0.35246387  \\
+            1.4  -0.39251792  \\
+            1.5  -0.43723533  \\
+            1.6  -0.49647748  \\
+            1.7  -0.57129776  \\
+            1.8  -0.6664946  \\
+            1.9  -0.79289323  \\
+        }
+        ;
+    \addplot[color={rgb,1:red,0.851;green,0.373;blue,0.008}, name path={62035d22-de96-4508-bf3b-154ffcf3b20c}, draw opacity={0.3}, line width={1}, solid, forget plot]
+        table[row sep={\\}]
+        {
+            \\
+            0.0  -0.15169096  \\
+            0.1  -0.17126115  \\
+            0.2  -0.19318543  \\
+            0.3  -0.2193484  \\
+            0.4  -0.25997293  \\
+            0.5  -0.2948139  \\
+            0.6  -0.32697663  \\
+            0.7  -0.34594798  \\
+            0.8  -0.36408553  \\
+            0.9  -0.37734726  \\
+            1.0  -0.40511447  \\
+            1.1  -0.44008663  \\
+            1.2  -0.4781259  \\
+            1.3  -0.5243313  \\
+            1.4  -0.5771259  \\
+            1.5  -0.6356291  \\
+            1.6  -0.7240973  \\
+            1.7  -0.8594998  \\
+        }
+        ;
+    \addplot[color={rgb,1:red,0.851;green,0.373;blue,0.008}, name path={4c76818d-145f-4d98-808a-bae5e0adf07a}, draw opacity={0.3}, line width={1}, solid, forget plot]
+        table[row sep={\\}]
+        {
+            \\
+            0.0  0.00684384  \\
+            0.1  -0.0052741403  \\
+            0.2  -0.033105005  \\
+            0.3  -0.07316061  \\
+            0.4  -0.11631089  \\
+            0.5  -0.15021768  \\
+            0.6  -0.19675887  \\
+            0.7  -0.23080638  \\
+            0.8  -0.26593837  \\
+            0.9  -0.29434314  \\
+            1.0  -0.31575698  \\
+            1.1  -0.34567806  \\
+            1.2  -0.3800956  \\
+            1.3  -0.41579705  \\
+            1.4  -0.48320913  \\
+            1.5  -0.5607498  \\
+            1.6  -0.6510462  \\
+            1.7  -0.76355815  \\
+            1.8  -0.91485584  \\
+        }
+        ;
+    \addplot[color={rgb,1:red,0.851;green,0.373;blue,0.008}, name path={79bab97d-f530-4e5e-b433-59d1b0756662}, draw opacity={0.3}, line width={1}, solid, forget plot]
+        table[row sep={\\}]
+        {
+            \\
+            0.0  -0.0701991  \\
+            0.1  -0.08675492  \\
+            0.2  -0.107644305  \\
+            0.3  -0.13384631  \\
+            0.4  -0.1635954  \\
+            0.5  -0.19127075  \\
+            0.6  -0.2213615  \\
+            0.7  -0.24436694  \\
+            0.8  -0.262882  \\
+            0.9  -0.280425  \\
+            1.0  -0.31675127  \\
+            1.1  -0.362287  \\
+            1.2  -0.4014236  \\
+            1.3  -0.44346663  \\
+            1.4  -0.48468915  \\
+            1.5  -0.5252057  \\
+            1.6  -0.5748443  \\
+            1.7  -0.6486123  \\
+            1.8  -0.7598779  \\
+            1.9  -0.9045042  \\
+        }
+        ;
+    \addplot[color={rgb,1:red,0.851;green,0.373;blue,0.008}, name path={bec5cf63-2730-4113-82ad-3b532482f33f}, draw opacity={0.3}, line width={1}, solid, forget plot]
+        table[row sep={\\}]
+        {
+            \\
+            0.0  -0.12023266  \\
+            0.1  -0.14506695  \\
+            0.2  -0.17412567  \\
+            0.3  -0.21044485  \\
+            0.4  -0.25445536  \\
+            0.5  -0.287583  \\
+            0.6  -0.32176238  \\
+            0.7  -0.34665823  \\
+            0.8  -0.3723938  \\
+            0.9  -0.39803725  \\
+            1.0  -0.42294076  \\
+            1.1  -0.45209792  \\
+            1.2  -0.4868321  \\
+            1.3  -0.5319126  \\
+            1.4  -0.59476  \\
+            1.5  -0.68222445  \\
+            1.6  -0.7962603  \\
+        }
+        ;
+    \addplot[color={rgb,1:red,0.851;green,0.373;blue,0.008}, name path={808ea18b-86ff-40a4-b31a-e24d13b3fc8a}, draw opacity={0.3}, line width={1}, solid, forget plot]
+        table[row sep={\\}]
+        {
+            \\
+            0.0  -0.106687136  \\
+            0.1  -0.10435931  \\
+            0.2  -0.113432124  \\
+            0.3  -0.120774806  \\
+            0.4  -0.121622816  \\
+            0.5  -0.13078354  \\
+            0.6  -0.13968468  \\
+            0.7  -0.16669881  \\
+            0.8  -0.20489417  \\
+            0.9  -0.25417122  \\
+            1.0  -0.28616413  \\
+            1.1  -0.3231602  \\
+            1.2  -0.3545389  \\
+            1.3  -0.3833662  \\
+            1.4  -0.41328323  \\
+            1.5  -0.44750214  \\
+            1.6  -0.48305422  \\
+            1.7  -0.53893983  \\
+            1.8  -0.61375886  \\
+            1.9  -0.70977896  \\
+        }
+        ;
+    \addplot[color={rgb,1:red,0.851;green,0.373;blue,0.008}, name path={4557f929-36e1-4eeb-baef-808d7d8ea2f1}, draw opacity={0.3}, line width={1}, solid, forget plot]
+        table[row sep={\\}]
+        {
+            \\
+            0.0  -0.09237106  \\
+            0.1  -0.105241664  \\
+            0.2  -0.12174827  \\
+            0.3  -0.1398101  \\
+            0.4  -0.15553384  \\
+            0.5  -0.18281955  \\
+            0.6  -0.21843241  \\
+            0.7  -0.23521714  \\
+            0.8  -0.262626  \\
+            0.9  -0.28520983  \\
+            1.0  -0.30470556  \\
+            1.1  -0.32485116  \\
+            1.2  -0.35060117  \\
+            1.3  -0.38670063  \\
+            1.4  -0.42122844  \\
+            1.5  -0.45971414  \\
+            1.6  -0.5097053  \\
+            1.7  -0.57167774  \\
+            1.8  -0.6527211  \\
+            1.9  -0.7637942  \\
+        }
+        ;
+    \addplot[color={rgb,1:red,0.851;green,0.373;blue,0.008}, name path={2afa4cff-db17-452c-a7f0-4b378933ef62}, draw opacity={0.3}, line width={1}, solid, forget plot]
+        table[row sep={\\}]
+        {
+            \\
+            0.0  -0.08179804  \\
+            0.1  -0.093627855  \\
+            0.2  -0.1176809  \\
+            0.3  -0.15069118  \\
+            0.4  -0.18285884  \\
+            0.5  -0.21234697  \\
+            0.6  -0.24994773  \\
+            0.7  -0.27009216  \\
+            0.8  -0.29968274  \\
+            0.9  -0.33134216  \\
+            1.0  -0.36434713  \\
+            1.1  -0.39719677  \\
+            1.2  -0.4346176  \\
+            1.3  -0.474476  \\
+            1.4  -0.5297608  \\
+            1.5  -0.6115216  \\
+            1.6  -0.7157535  \\
+            1.7  -0.85351354  \\
+        }
+        ;
+    \addplot[color={rgb,1:red,0.459;green,0.439;blue,0.702}, name path={cf938a50-7a19-4957-8195-9053d2b64b54}, draw opacity={0.3}, line width={1}, solid]
+        table[row sep={\\}]
+        {
+            \\
+            0.0  -0.072113484  \\
+            0.1  -0.07388187  \\
+            0.2  -0.06921721  \\
+            0.3  -0.046851847  \\
+            0.4  -0.010487779  \\
+            0.5  0.04209831  \\
+            0.6  0.09265095  \\
+            0.7  0.1342223  \\
+            0.8  0.18149832  \\
+            0.9  0.24966575  \\
+            1.0  0.29733038  \\
+            1.1  0.3291037  \\
+            1.2  0.3577956  \\
+            1.3  0.39774242  \\
+            1.4  0.4397364  \\
+            1.5  0.49538785  \\
+            1.6  0.56143177  \\
+            1.7  0.6442795  \\
+            1.8  0.76232445  \\
+            1.9  0.93251187  \\
+        }
+        ;
+    \addlegendentry {$q_2$}
+    \addplot[color={rgb,1:red,0.459;green,0.439;blue,0.702}, name path={05b3182d-bff9-4c46-a415-cd7ed95df18a}, draw opacity={0.3}, line width={1}, solid, forget plot]
+        table[row sep={\\}]
+        {
+            \\
+            0.0  -0.1428056  \\
+            0.1  -0.1484579  \\
+            0.2  -0.12446547  \\
+            0.3  -0.07804757  \\
+            0.4  -0.018735828  \\
+            0.5  0.044915803  \\
+            0.6  0.1073051  \\
+            0.7  0.16725926  \\
+            0.8  0.21853389  \\
+            0.9  0.26506087  \\
+            1.0  0.30314896  \\
+            1.1  0.34216267  \\
+            1.2  0.37499848  \\
+            1.3  0.41194937  \\
+            1.4  0.44383717  \\
+            1.5  0.48552102  \\
+            1.6  0.5346545  \\
+            1.7  0.60482115  \\
+            1.8  0.6906669  \\
+            1.9  0.811949  \\
+        }
+        ;
+    \addplot[color={rgb,1:red,0.459;green,0.439;blue,0.702}, name path={c968602f-8967-4d00-bf62-7638b59b590f}, draw opacity={0.3}, line width={1}, solid, forget plot]
+        table[row sep={\\}]
+        {
+            \\
+            0.0  -0.07786907  \\
+            0.1  -0.057008356  \\
+            0.2  -0.028062297  \\
+            0.3  0.011248299  \\
+            0.4  0.049847398  \\
+            0.5  0.08804004  \\
+            0.6  0.11013615  \\
+            0.7  0.14151232  \\
+            0.8  0.17746915  \\
+            0.9  0.22795108  \\
+            1.0  0.27062783  \\
+            1.1  0.30798003  \\
+            1.2  0.3321284  \\
+            1.3  0.37005675  \\
+            1.4  0.4131877  \\
+            1.5  0.46320668  \\
+            1.6  0.5306011  \\
+            1.7  0.6168585  \\
+            1.8  0.72075665  \\
+            1.9  0.8613614  \\
+        }
+        ;
+    \addplot[color={rgb,1:red,0.459;green,0.439;blue,0.702}, name path={cb70b357-ef83-4288-84fd-3e906e71b010}, draw opacity={0.3}, line width={1}, solid, forget plot]
+        table[row sep={\\}]
+        {
+            \\
+            0.0  0.09433033  \\
+            0.1  0.102848254  \\
+            0.2  0.13839982  \\
+            0.3  0.17279795  \\
+            0.4  0.20318934  \\
+            0.5  0.24747668  \\
+            0.6  0.2867362  \\
+            0.7  0.32360503  \\
+            0.8  0.3424639  \\
+            0.9  0.38005045  \\
+            1.0  0.41987386  \\
+            1.1  0.46031502  \\
+            1.2  0.5192146  \\
+            1.3  0.58383393  \\
+            1.4  0.66934174  \\
+            1.5  0.78991145  \\
+        }
+        ;
+    \addplot[color={rgb,1:red,0.459;green,0.439;blue,0.702}, name path={ac4796b6-10cd-48b5-968b-92ae38d5fcd8}, draw opacity={0.3}, line width={1}, solid, forget plot]
+        table[row sep={\\}]
+        {
+            \\
+            0.0  -0.09843817  \\
+            0.1  -0.08994979  \\
+            0.2  -0.08703454  \\
+            0.3  -0.07640027  \\
+            0.4  -0.056075662  \\
+            0.5  -0.017499248  \\
+            0.6  0.028955521  \\
+            0.7  0.081674285  \\
+            0.8  0.12715979  \\
+            0.9  0.16250154  \\
+            1.0  0.21050909  \\
+            1.1  0.2606008  \\
+            1.2  0.30752254  \\
+            1.3  0.34389305  \\
+            1.4  0.39749733  \\
+            1.5  0.4584501  \\
+            1.6  0.52847457  \\
+            1.7  0.61672294  \\
+            1.8  0.7297948  \\
+            1.9  0.876691  \\
+        }
+        ;
+    \addplot[color={rgb,1:red,0.459;green,0.439;blue,0.702}, name path={7fae2761-394e-4b94-b183-714e227ea99e}, draw opacity={0.3}, line width={1}, solid, forget plot]
+        table[row sep={\\}]
+        {
+            \\
+            0.0  0.13504177  \\
+            0.1  0.14375117  \\
+            0.2  0.1512142  \\
+            0.3  0.16678841  \\
+            0.4  0.18384217  \\
+            0.5  0.2081611  \\
+            0.6  0.23572356  \\
+            0.7  0.27362987  \\
+            0.8  0.313542  \\
+            0.9  0.34709495  \\
+            1.0  0.38248062  \\
+            1.1  0.4246972  \\
+            1.2  0.47789535  \\
+            1.3  0.5308044  \\
+            1.4  0.595757  \\
+            1.5  0.68252945  \\
+            1.6  0.78868926  \\
+        }
+        ;
+    \addplot[color={rgb,1:red,0.459;green,0.439;blue,0.702}, name path={41fcc7e2-ebfe-4b82-a0f7-319878abc8bb}, draw opacity={0.3}, line width={1}, solid, forget plot]
+        table[row sep={\\}]
+        {
+            \\
+            0.0  -0.029983776  \\
+            0.1  -0.0038964048  \\
+            0.2  0.02027098  \\
+            0.3  0.050464682  \\
+            0.4  0.06791952  \\
+            0.5  0.09898645  \\
+            0.6  0.11680544  \\
+            0.7  0.14589684  \\
+            0.8  0.16839693  \\
+            0.9  0.19539618  \\
+            1.0  0.2300317  \\
+            1.1  0.26499403  \\
+            1.2  0.29975864  \\
+            1.3  0.3406461  \\
+            1.4  0.37975314  \\
+            1.5  0.42363042  \\
+            1.6  0.48001674  \\
+            1.7  0.56066406  \\
+            1.8  0.65222114  \\
+            1.9  0.7826347  \\
+        }
+        ;
+    \addplot[color={rgb,1:red,0.459;green,0.439;blue,0.702}, name path={ca8e561e-5784-40cc-8764-e783ab448874}, draw opacity={0.3}, line width={1}, solid, forget plot]
+        table[row sep={\\}]
+        {
+            \\
+            0.0  -0.054410864  \\
+            0.1  -0.04490878  \\
+            0.2  -0.018865466  \\
+            0.3  0.014604735  \\
+            0.4  0.06835404  \\
+            0.5  0.12127064  \\
+            0.6  0.17085889  \\
+            0.7  0.2279628  \\
+            0.8  0.28286317  \\
+            0.9  0.32797572  \\
+            1.0  0.3785795  \\
+            1.1  0.41182688  \\
+            1.2  0.45611063  \\
+            1.3  0.50707924  \\
+            1.4  0.5736542  \\
+            1.5  0.66398156  \\
+            1.6  0.76825607  \\
+            1.7  0.9229431  \\
+        }
+        ;
+    \addplot[color={rgb,1:red,0.459;green,0.439;blue,0.702}, name path={70e27e36-1542-4429-a168-f9c202b82d5e}, draw opacity={0.3}, line width={1}, solid, forget plot]
+        table[row sep={\\}]
+        {
+            \\
+            0.0  -0.1426996  \\
+            0.1  -0.1341763  \\
+            0.2  -0.12698342  \\
+            0.3  -0.105801105  \\
+            0.4  -0.08113848  \\
+            0.5  -0.04917696  \\
+            0.6  -0.011036522  \\
+            0.7  0.032301046  \\
+            0.8  0.08178171  \\
+            0.9  0.13469286  \\
+            1.0  0.19612205  \\
+            1.1  0.24248105  \\
+            1.2  0.27673477  \\
+            1.3  0.32033125  \\
+            1.4  0.36026794  \\
+            1.5  0.40134072  \\
+            1.6  0.44411063  \\
+            1.7  0.508846  \\
+            1.8  0.58289826  \\
+            1.9  0.67766464  \\
+        }
+        ;
+    \addplot[color={rgb,1:red,0.459;green,0.439;blue,0.702}, name path={5502f6ce-d0ba-404a-aca3-8e5095b1537a}, draw opacity={0.3}, line width={1}, solid, forget plot]
+        table[row sep={\\}]
+        {
+            \\
+            0.0  -0.029175365  \\
+            0.1  0.00065497425  \\
+            0.2  0.029132197  \\
+            0.3  0.05959799  \\
+            0.4  0.098267674  \\
+            0.5  0.14158885  \\
+            0.6  0.17192939  \\
+            0.7  0.21837552  \\
+            0.8  0.25636256  \\
+            0.9  0.2818512  \\
+            1.0  0.30941105  \\
+            1.1  0.34198886  \\
+            1.2  0.38517204  \\
+            1.3  0.41688764  \\
+            1.4  0.4681935  \\
+            1.5  0.54297495  \\
+            1.6  0.64087594  \\
+            1.7  0.77444005  \\
+            1.8  0.9320302  \\
+        }
+        ;
+\end{axis}
+\end{tikzpicture}

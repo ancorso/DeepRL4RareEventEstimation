@@ -25,6 +25,7 @@ Nsteps_per_episode = 20
 noise_dist=Normal(0, 0.4)
 Px, mdp = gen_topple_mdp(px=noise_dist, Nsteps=Nsteps_per_episode, dt=dt, failure_thresh=failure_target)
 xs = Px.distribution.support
+println(Px.distribution.p)
 S = state_space(mdp)
 A = action_space(Px)
 

@@ -82,7 +82,7 @@ cem_params(name, π) = (
 pg_params(name, π; use_baseline=false, kwargs...) = (
 	ΔN=200, 
 	use_baseline,
-	a_opt=(;optimizer=Flux.Optimiser(Flux.ClipValue(1f0), Adam(3f-4)), batch_size=ΔN*Nsteps_per_episode),
+	a_opt=(;optimizer=Flux.Optimiser(Flux.ClipValue(1f0), Adam(3f-4)), batch_size=200*Nsteps_per_episode),
 	c_opt=(;max_batches=200, batch_size=1024),
 	training_buffer_size=200*Nsteps_per_episode,
 	agent_pretrain=use_baseline ? pretrain_AV(mdp, Px, v_target=0.1, Nepochs=Npretrain) : pretrain_policy(mdp, Px, Nepochs=Npretrain),
@@ -95,7 +95,7 @@ vb_params(name, π; kwargs...) = (
 	train_actor=true,
 	training_buffer_size=3200*Nsteps_per_episode,
 	a_opt=(optimizer=Flux.Optimiser(Flux.ClipValue(1f0), Adam(3f-4)), batch_size=1024),
-	c_opt=(epochs=20, batch_size=1024, optimizer=Flux.Optimiser(Flux.ClipValue(1f0), Adam(3f-4))), 
+	c_opt=(epochs=20, batch_size=128, optimizer=Flux.Optimiser(Flux.ClipValue(1f0), Adam(3f-4))), 
 	agent_pretrain=pretrain_AQ(mdp, Px, v_target=0.1, Nepochs=Npretrain),
 	xi,
 	wi,
@@ -163,8 +163,7 @@ end
 # # Can we include exploration for the value based method?
 
 ## Quick test:
-# 𝒮 = PolicyGradientIS(;pg_params("PG", Π())...)
+# 𝒮 = ValueBasedIS(;vb_params("VB_MIS2", MISPolicy([AQ(), AQ()]))...)
 # fs, ws = solve(𝒮, mdp)
 # plot(1:Neps, x->gt, linestyle=:dash, color=:black, ylims=(0,0.0001))
 # plot!(cumsum(fs .* ws) ./ (1:length(ws)))
-
